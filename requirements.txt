@@ -3,7 +3,7 @@ brotli==1.2.0
 cffi==2.1.0
 cssselect2==0.9.0
 dj-database-url==3.1.2
-Django==6.0.5
+Django==5.0.5
 et_xmlfile==2.0.0
 fonttools==4.63.0
 gunicorn==26.0.0
