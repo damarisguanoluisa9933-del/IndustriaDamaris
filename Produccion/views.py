@@ -399,40 +399,61 @@ def listado_maquinarias(request):
 
 @login_required(login_url='login')
 def nueva_maquinaria(request):
-    """Crea una maquina nueva asignada a una linea de ensamblaje."""
+    """Crea una máquina generando código automático (MAQ-001) y evitando duplicados."""
     lineas = LineaEnsamblaje.objects.all()
     if request.method == 'POST':
-        codigo = request.POST.get('codigo_inventario')
+        nombre_maq = request.POST.get('nombre', '').strip()
+        codigo = request.POST.get('codigo_inventario', '').strip()
+
+        # Generación automática de código si no se ingresa uno o si viene con el prefijo base 'MAQ-'
+        if not codigo or codigo == 'MAQ-':
+            ultimo_id = Maquinaria.objects.count() + 1
+            codigo = f"MAQ-{ultimo_id:03d}"
+            while Maquinaria.objects.filter(codigo_inventario=codigo).exists():
+                ultimo_id += 1
+                codigo = f"MAQ-{ultimo_id:03d}"
+
+        # Control estricto para evitar códigos duplicados en la base de datos
         if Maquinaria.objects.filter(codigo_inventario=codigo).exists():
             messages.error(request, f'El código de inventario "{codigo}" ya está registrado.')
-            return render(request, 'MAQUINARIA/nueva_maquinaria.html', {'lineas': lineas})
+            return render(request, 'MAQUINARIA/nueva_maquinaria.html', {'lineas': lineas, 'codigo_sugerido': codigo})
 
         linea = get_object_or_404(LineaEnsamblaje, id=request.POST.get('linea_id'))
         Maquinaria.objects.create(
-            nombre=request.POST.get('nombre'),
+            nombre=nombre_maq,
             codigo_inventario=codigo,
             linea=linea,
             estado=request.POST.get('estado', 'Operativa'),
             horas_uso=request.POST.get('horas_uso', 0),
             foto=request.FILES.get('foto')
         )
-        messages.success(request, 'Maquinaria registrada correctamente.')
+        messages.success(request, f'Maquinaria "{nombre_maq}" registrada correctamente.')
         return redirect('listado_maquinarias')
 
-    return render(request, 'MAQUINARIA/nueva_maquinaria.html', {'lineas': lineas})
+    # Sugerencia de código automático secuencial (ej. MAQ-001)
+    ultimo_id = Maquinaria.objects.count() + 1
+    codigo_sugerido = f"MAQ-{ultimo_id:03d}"
+    while Maquinaria.objects.filter(codigo_inventario=codigo_sugerido).exists():
+        ultimo_id += 1
+        codigo_sugerido = f"MAQ-{ultimo_id:03d}"
+
+    return render(request, 'MAQUINARIA/nueva_maquinaria.html', {'lineas': lineas, 'codigo_sugerido': codigo_sugerido})
+
 
 @login_required(login_url='login')
 def editar_maquinaria(request, id):
-    """Actualiza datos u horas de uso de la maquina."""
+    """Actualiza la maquinaria verificando que el código no pertenezca a otra máquina."""
     maquinaria = get_object_or_404(Maquinaria, id=id)
     lineas = LineaEnsamblaje.objects.all()
     if request.method == 'POST':
-        codigo = request.POST.get('codigo_inventario')
+        nombre_maq = request.POST.get('nombre', '').strip()
+        codigo = request.POST.get('codigo_inventario', '').strip()
+
         if Maquinaria.objects.filter(codigo_inventario=codigo).exclude(id=id).exists():
             messages.error(request, f'El código "{codigo}" ya pertenece a otra máquina.')
             return render(request, 'MAQUINARIA/editar_maquinaria.html', {'maquinaria': maquinaria, 'lineas': lineas})
 
-        maquinaria.nombre = request.POST.get('nombre')
+        maquinaria.nombre = nombre_maq
         maquinaria.codigo_inventario = codigo
         maquinaria.linea_id = request.POST.get('linea_id')
         maquinaria.estado = request.POST.get('estado')
@@ -440,7 +461,7 @@ def editar_maquinaria(request, id):
         if request.FILES.get('foto'):
             maquinaria.foto = request.FILES.get('foto')
         maquinaria.save()
-        messages.success(request, 'Maquinaria actualizada correctamente.')
+        messages.success(request, f'Maquinaria "{nombre_maq}" actualizada correctamente.')
         return redirect('listado_maquinarias')
 
     return render(request, 'MAQUINARIA/editar_maquinaria.html', {'maquinaria': maquinaria, 'lineas': lineas})
@@ -690,7 +711,7 @@ def listado_ordenes(request):
 
 @login_required(login_url='login')
 def nueva_orden(request):
-    """Crea una orden de fabricacion (lote) asignando su materia prima requerida."""
+    """Crea una orden de fabricación autogenerando el código secuencial (LOT-001) y validando duplicados."""
     lineas = LineaEnsamblaje.objects.all()
     maquinas = Maquinaria.objects.all()
     supervisores = Supervisor.objects.all()
@@ -699,23 +720,28 @@ def nueva_orden(request):
     supervisor_logueado = getattr(request.user, 'perfil_supervisor', None)
 
     if request.method == 'POST':
-        codigo_lote = request.POST.get('codigo_lote')
+        codigo_lote = request.POST.get('codigo_lote', '').strip()
+        producto = request.POST.get('producto', '').strip()
 
-        # Si el codigo de lote ya existe rebotamos la pantalla
+        # GENERACION AUTOMATICA de código secuencial si no ingresan uno personalizado
+        if not codigo_lote or codigo_lote == 'LOT-':
+            ultimo_id = OrdenFabricacion.objects.count() + 1
+            codigo_lote = f"LOT-{ultimo_id:03d}"
+            while OrdenFabricacion.objects.filter(codigo_lote=codigo_lote).exists():
+                ultimo_id += 1
+                codigo_lote = f"LOT-{ultimo_id:03d}"
+
+        # Validación estricta de duplicados
         if OrdenFabricacion.objects.filter(codigo_lote=codigo_lote).exists():
-            messages.error(request, f'El código de lote "{codigo_lote}" ya está registrado. Ingrese uno diferente.')
+            messages.error(request, f'El código de lote "{codigo_lote}" ya está registrado en el sistema.')
             return render(request, 'ORDEN_FABRICACION/nueva_orden.html', {
-                'lineas': lineas, 
-                'maquinas': maquinas, 
-                'supervisores': supervisores, 
-                'operarios': operarios, 
-                'insumos': insumos, 
-                'supervisor_logueado': supervisor_logueado
+                'lineas': lineas, 'maquinas': maquinas, 'supervisores': supervisores, 
+                'operarios': operarios, 'insumos': insumos, 'supervisor_logueado': supervisor_logueado,
+                'codigo_sugerido': codigo_lote
             })
 
         linea = get_object_or_404(LineaEnsamblaje, id=request.POST.get('linea_id'))
         
-        # Asigna automaticamente al supervisor conectado, a menos que sea Admin que si puede elegir
         if not request.user.is_superuser and supervisor_logueado:
             supervisor = supervisor_logueado
         else:
@@ -724,10 +750,10 @@ def nueva_orden(request):
         maquina = get_object_or_404(Maquinaria, id=request.POST.get('maquina_id')) if request.POST.get('maquina_id') else None
         operario = get_object_or_404(Operario, id=request.POST.get('operario_id')) if request.POST.get('operario_id') else None
 
-        # 1. Guardamos la orden principal
+        # 1. Guardar la orden principal
         orden = OrdenFabricacion.objects.create(
             codigo_lote=codigo_lote,
-            producto=request.POST.get('producto'),
+            producto=producto,
             linea=linea,
             maquina=maquina,
             supervisor=supervisor,
@@ -739,7 +765,7 @@ def nueva_orden(request):
             estado=request.POST.get('estado', 'Pendiente')
         )
 
-        # 2. Guardamos el detalle de la materia prima usada
+        # 2. Guardar el detalle de la materia prima usada
         insumo_id = request.POST.get('insumo_id')
         if insumo_id:
             insumo_obj = get_object_or_404(Insumo, id=insumo_id)
@@ -753,22 +779,26 @@ def nueva_orden(request):
                 cantidad_utilizada=cant_uti
             )
 
-        messages.success(request, 'Lote de producción y materia prima asignados correctamente.')
+        messages.success(request, f'Lote de producción "{codigo_lote}" ({producto}) registrado correctamente.')
         return redirect('listado_ordenes')
 
+    # Sugerencia automática de código secuencial
+    ultimo_id = OrdenFabricacion.objects.count() + 1
+    codigo_sugerido = f"LOT-{ultimo_id:03d}"
+    while OrdenFabricacion.objects.filter(codigo_lote=codigo_sugerido).exists():
+        ultimo_id += 1
+        codigo_sugerido = f"LOT-{ultimo_id:03d}"
+
     return render(request, 'ORDEN_FABRICACION/nueva_orden.html', {
-        'lineas': lineas, 
-        'maquinas': maquinas, 
-        'supervisores': supervisores, 
-        'operarios': operarios, 
-        'insumos': insumos, 
-        'supervisor_logueado': supervisor_logueado
+        'lineas': lineas, 'maquinas': maquinas, 'supervisores': supervisores, 
+        'operarios': operarios, 'insumos': insumos, 'supervisor_logueado': supervisor_logueado,
+        'codigo_sugerido': codigo_sugerido
     })
 
 
 @login_required(login_url='login')
 def editar_orden(request, id):
-    """Edita la orden de fabricacion y actualiza los insumos."""
+    """Edita la orden de fabricación validando que el código no pertenezca a otro lote."""
     orden = get_object_or_404(OrdenFabricacion, id=id)
     lineas = LineaEnsamblaje.objects.all()
     maquinas = Maquinaria.objects.all()
@@ -779,22 +809,19 @@ def editar_orden(request, id):
     detalle_insumo = DetalleInsumoLote.objects.filter(orden=orden).first()
 
     if request.method == 'POST':
-        codigo_lote = request.POST.get('codigo_lote')
+        codigo_lote = request.POST.get('codigo_lote', '').strip()
+        producto = request.POST.get('producto', '').strip()
 
         if OrdenFabricacion.objects.filter(codigo_lote=codigo_lote).exclude(id=id).exists():
-            messages.error(request, f'El código de lote "{codigo_lote}" ya pertenece a otra orden.')
+            messages.error(request, f'El código de lote "{codigo_lote}" ya pertenece a otra orden registrada.')
             return render(request, 'ORDEN_FABRICACION/editar_orden.html', {
-                'orden': orden, 
-                'lineas': lineas, 
-                'maquinas': maquinas, 
-                'supervisores': supervisores, 
-                'operarios': operarios, 
-                'insumos': insumos, 
+                'orden': orden, 'lineas': lineas, 'maquinas': maquinas, 
+                'supervisores': supervisores, 'operarios': operarios, 'insumos': insumos, 
                 'detalle_insumo': detalle_insumo
             })
 
         orden.codigo_lote = codigo_lote
-        orden.producto = request.POST.get('producto')
+        orden.producto = producto
         orden.linea_id = request.POST.get('linea_id')
         orden.maquina_id = request.POST.get('maquina_id') or None
         
@@ -805,7 +832,6 @@ def editar_orden(request, id):
         orden.cantidad_programada = request.POST.get('cantidad_programada') or 0
         orden.cantidad_producida = request.POST.get('cantidad_producida') or 0
         orden.estado = request.POST.get('estado')
-        
         orden.save()
 
         insumo_id = request.POST.get('insumo_id')
@@ -827,16 +853,12 @@ def editar_orden(request, id):
                     cantidad_utilizada=cant_uti
                 )
 
-        messages.success(request, 'Lote y desperdicios recalculados exitosamente.')
+        messages.success(request, f'Lote "{codigo_lote}" actualizado correctamente.')
         return redirect('listado_ordenes')
 
     return render(request, 'ORDEN_FABRICACION/editar_orden.html', {
-        'orden': orden, 
-        'lineas': lineas, 
-        'maquinas': maquinas, 
-        'supervisores': supervisores, 
-        'operarios': operarios, 
-        'insumos': insumos, 
+        'orden': orden, 'lineas': lineas, 'maquinas': maquinas, 
+        'supervisores': supervisores, 'operarios': operarios, 'insumos': insumos, 
         'detalle_insumo': detalle_insumo
     })
 

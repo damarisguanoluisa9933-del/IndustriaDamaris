@@ -4,24 +4,27 @@
     <div class="row justify-content-center">
         <div class="col-md-10">
             <div class="card shadow border-0">
-                <div class="card-header bg-primary text-white"><h4 class="mb-0"><i class="bi bi-plus-circle me-2"></i>Registrar Órden de Fabricación</h4></div>
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0"><i class="bi bi-plus-circle me-2"></i>Registrar Órden de Fabricación</h4>
+                </div>
                 <div class="card-body">
                     <form id="frm_orden" action="{% url 'nueva_orden' %}" method="post">
                         {% csrf_token %}
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label class="form-label"><b>Código de Lote:</b></label>
-                                <input type="text" class="form-control" name="codigo_lote" required>
+                                <input type="text" class="form-control" id="codigo_lote" name="codigo_lote" value="{{ codigo_sugerido }}" placeholder="Ej: LOT-001, LOT-2026-A">
+                                <small class="text-muted">Se genera un código secuencial automático (LOT-001), o puede personalizarlo.</small>
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label class="form-label"><b>Producto a Fabricar:</b></label>
-                                <input type="text" class="form-control" name="producto" required>
+                                <input type="text" class="form-control" id="producto" name="producto" placeholder="Ej: Botellas Plásticas 500ml, Envases Multiuso">
                             </div>
                         </div>
                         <div class="row">
                             <div class="col-md-6 mb-3">
-                                <label class="form-label"><b>Línea:</b></label>
-                                <select class="form-select" name="linea_id" required>
+                                <label class="form-label"><b>Línea de Ensamblaje:</b></label>
+                                <select class="form-select" id="linea_id" name="linea_id">
                                     <option value="">-- Seleccione Línea --</option>
                                     {% for linea in lineas %}
                                         <option value="{{ linea.id }}">{{ linea.nombre }}</option>
@@ -30,8 +33,8 @@
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label class="form-label"><b>Máquina Asignada:</b></label>
-                                <select class="form-select" name="maquina_id">
-                                    <option value="">-- Seleccione Máquina --</option>
+                                <select class="form-select" id="maquina_id" name="maquina_id">
+                                    <option value="">-- Seleccione Máquina (Opcional) --</option>
                                     {% for maquina in maquinas %}
                                         <option value="{{ maquina.id }}">{{ maquina.nombre }}</option>
                                     {% endfor %}
@@ -45,7 +48,7 @@
                                     <input type="text" class="form-control" value="{{ supervisor_logueado.nombre }} {{ supervisor_logueado.apellido }}" readonly>
                                     <input type="hidden" name="supervisor_id" value="{{ supervisor_logueado.id }}">
                                 {% else %}
-                                    <select class="form-select" name="supervisor_id" required>
+                                    <select class="form-select" id="supervisor_id" name="supervisor_id">
                                         <option value="">-- Seleccione Supervisor --</option>
                                         {% for supervisor in supervisores %}
                                             <option value="{{ supervisor.id }}">{{ supervisor.nombre }} {{ supervisor.apellido }}</option>
@@ -55,8 +58,8 @@
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label class="form-label"><b>Operario Principal:</b></label>
-                                <select class="form-select" name="operario_id">
-                                    <option value="">-- Seleccione Operario --</option>
+                                <select class="form-select" id="operario_id" name="operario_id">
+                                    <option value="">-- Seleccione Operario (Opcional) --</option>
                                     {% for operario in operarios %}
                                         <option value="{{ operario.id }}">{{ operario.nombres }} {{ operario.apellidos }}</option>
                                     {% endfor %}
@@ -74,7 +77,7 @@
                         <div class="row">
                             <div class="col-md-4 mb-3">
                                 <label class="form-label"><b>Seleccionar Insumo:</b></label>
-                                <select class="form-select" id="select_insumo" name="insumo_id" required>
+                                <select class="form-select" id="select_insumo" name="insumo_id">
                                     <option value="" data-stock="0">-- Seleccione Insumo --</option>
                                     {% for insumo in insumos %}
                                         <option value="{{ insumo.id }}" data-stock="{{ insumo.stock_disponible }}" data-unidad="{{ insumo.unidad_medida }}">
@@ -85,11 +88,11 @@
                             </div>
                             <div class="col-md-4 mb-3">
                                 <label class="form-label"><b>Cantidad Estimada:</b></label>
-                                <input type="number" step="0.01" min="0.01" class="form-control" id="input_estimada" name="cantidad_estimada" placeholder="Ej: 100" required>
+                                <input type="number" step="0.01" min="0.01" class="form-control" id="input_estimada" name="cantidad_estimada" placeholder="Ej: 100.00">
                             </div>
                             <div class="col-md-4 mb-3">
                                 <label class="form-label"><b>Cantidad Utilizada:</b></label>
-                                <input type="number" step="0.01" min="0.01" class="form-control" id="input_utilizada" name="cantidad_utilizada" placeholder="Ej: 105" required>
+                                <input type="number" step="0.01" min="0.01" class="form-control" id="input_utilizada" name="cantidad_utilizada" placeholder="Ej: 105.50">
                             </div>
                         </div>
 
@@ -97,10 +100,10 @@
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label class="form-label"><b>Cantidad Programada (Unidades):</b></label>
-                                <input type="number" min="1" class="form-control" name="cantidad_programada" required>
+                                <input type="number" min="1" class="form-control" id="cantidad_programada" name="cantidad_programada" placeholder="Ej: 5000">
                             </div>
                             <div class="col-md-6 mb-3">
-                                <label class="form-label"><b>Estado:</b></label>
+                                <label class="form-label"><b>Estado Inicial:</b></label>
                                 <select class="form-select" name="estado">
                                     <option value="Pendiente" selected>Pendiente</option>
                                     <option value="En Proceso">En Proceso</option>
@@ -108,19 +111,28 @@
                                 </select>
                             </div>
                         </div>
+
+                        <!-- FECHAS LIMITADAS DESDE HOY HASTA 6 MESES -->
                         <div class="row">
                             <div class="col-md-6 mb-3">
-                                <label class="form-label"><b>Fecha/Hora Inicio:</b></label>
-                                <input type="datetime-local" class="form-control" name="fecha_inicio_programada" required>
+                                <label class="form-label"><b>Fecha/Hora Inicio Programada:</b></label>
+                                <input type="datetime-local" class="form-control" id="fecha_inicio_programada" name="fecha_inicio_programada">
+                                <small class="text-muted">Rango permitido: Desde hoy hasta máximo 6 meses.</small>
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label class="form-label"><b>Fecha/Hora Estimada Fin:</b></label>
-                                <input type="datetime-local" class="form-control" name="fecha_fin_programada" required>
+                                <input type="datetime-local" class="form-control" id="fecha_fin_programada" name="fecha_fin_programada">
+                                <small class="text-muted">Debe ser posterior a la fecha de inicio y máximo en 6 meses.</small>
                             </div>
                         </div>
+
                         <div class="d-flex justify-content-between mt-4">
-                            <a href="{% url 'listado_ordenes' %}" class="btn btn-outline-secondary">Cancelar</a>
-                            <button type="submit" class="btn btn-primary">Guardar Lote</button>
+                            <a href="{% url 'listado_ordenes' %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-x-circle me-1"></i>Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-save me-1"></i>Guardar Lote
+                            </button>
                         </div>
                     </form>
                 </div>
@@ -132,21 +144,100 @@
 <script>
 $(document).ready(function() {
 
-    let validator = $("#frm_orden").validate({
+    // CALCULO AUTOMÁTICO DE FECHAS: HOY Y MÁXIMO 6 MESES
+    const ahora = new Date();
+    const formatearFechaLocal = (fecha) => {
+        const yyyy = fecha.getFullYear();
+        const mm = String(fecha.getMonth() + 1).padStart(2, '0');
+        const dd = String(fecha.getDate()).padStart(2, '0');
+        const hh = String(fecha.getHours()).padStart(2, '0');
+        const mi = String(fecha.getMinutes()).padStart(2, '0');
+        return `${yyyy}-${mm}-${dd}T${hh}:${mi}`;
+    };
+
+    const fechaHoyStr = formatearFechaLocal(ahora);
+
+    // Sumar 6 meses
+    const fechaLimite6Meses = new Date();
+    fechaLimite6Meses.setMonth(fechaLimite6Meses.getMonth() + 6);
+    const fechaMaxStr = formatearFechaLocal(fechaLimite6Meses);
+
+    // Asignar min y max directamente a los inputs en el HTML
+    $('#fecha_inicio_programada, #fecha_fin_programada').attr({
+        'min': fechaHoyStr,
+        'max': fechaMaxStr
+    });
+
+    // Reglas de Validación Personalizadas
+    $.validator.addMethod("productoReal", function(value, element) {
+        var texto = $.trim(value);
+        if (this.optional(element)) return true;
+        if (!/^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s\-\(\)]+$/.test(texto)) return false;
+        if (!/[a-zA-ZáéíóúÁÉÍÓÚñÑ]/.test(texto)) return false;
+        if (/^\d+$/.test(texto)) return false;
+        if (/(.)\1{3,}/.test(texto)) return false;
+        return true;
+    }, "Ingrese un nombre de producto válido.");
+
+    $.validator.addMethod("codigoMixto", function(value, element) {
+        var cod = $.trim(value);
+        if (this.optional(element)) return true;
+        if (!/^[a-zA-Z0-9\-_]+$/.test(cod)) return false;
+        return /[a-zA-Z]/.test(cod);
+    }, "El código no puede ser solo ceros ni solo números.");
+
+    // Validar que Fin sea después de Inicio
+    $.validator.addMethod("fechaFinValida", function(value, element) {
+        let fechaInicio = $('#fecha_inicio_programada').val();
+        if (!fechaInicio || !value) return true;
+        return new Date(value) > new Date(fechaInicio);
+    }, "La fecha estimada de fin debe ser posterior a la fecha de inicio.");
+
+    // Validar que no pase de 6 meses
+    $.validator.addMethod("maximo6Meses", function(value, element) {
+        if (!value) return true;
+        let fechaIngresada = new Date(value);
+        return fechaIngresada <= fechaLimite6Meses;
+    }, "La fecha no puede superar los 6 meses desde hoy.");
+
+    // Configuración de jQuery Validation
+    $("#frm_orden").validate({
+        ignore: [],
         rules: {
-            codigo_lote: { required: true },
-            producto: { required: true },
+            codigo_lote: { required: true, minlength: 3, maxlength: 20, codigoMixto: true },
+            producto: { required: true, minlength: 3, maxlength: 150, productoReal: true },
             linea_id: { required: true },
+            supervisor_id: { required: true },
             insumo_id: { required: true },
-            cantidad_estimada: { required: true, min: 0.01 },
-            cantidad_utilizada: { required: true, min: 0.01 },
-            cantidad_programada: { required: true, min: 1 },
-            fecha_inicio_programada: { required: true },
-            fecha_fin_programada: { required: true }
+            cantidad_estimada: { required: true, number: true, min: 0.01 },
+            cantidad_utilizada: { required: true, number: true, min: 0.01 },
+            cantidad_programada: { required: true, digits: true, min: 1 },
+            fecha_inicio_programada: { required: true, maximo6Meses: true },
+            fecha_fin_programada: { required: true, fechaFinValida: true, maximo6Meses: true }
+        },
+        messages: {
+            codigo_lote: { required: "Ingrese el código de lote." },
+            producto: { required: "Ingrese el nombre del producto." },
+            linea_id: { required: "Seleccione una línea de ensamblaje." },
+            supervisor_id: { required: "Seleccione un supervisor." },
+            insumo_id: { required: "Seleccione un insumo." },
+            cantidad_estimada: { required: "Ingrese la cantidad estimada.", min: "Mínimo 0.01." },
+            cantidad_utilizada: { required: "Ingrese la cantidad utilizada.", min: "Mínimo 0.01." },
+            cantidad_programada: { required: "Ingrese unidades a fabricar.", min: "Mínimo 1 unidad." },
+            fecha_inicio_programada: { required: "Seleccione la fecha/hora de inicio." },
+            fecha_fin_programada: { required: "Seleccione la fecha/hora estimada de fin." }
+        },
+        errorElement: 'label',
+        errorClass: 'error text-danger fw-bold mt-1 d-block',
+        highlight: function(element) {
+            $(element).addClass('is-invalid error').removeClass('is-valid');
+        },
+        unhighlight: function(element) {
+            $(element).removeClass('is-invalid error').addClass('is-valid');
         }
     });
 
-    // Evento al cambiar la materia prima elegida
+    // Control de Stock Dinámico por Materia Prima
     $('#select_insumo').on('change', function() {
         let opcionSeleccionada = $(this).find(':selected');
         let stockDisponible = parseFloat(opcionSeleccionada.data('stock')) || 0;
@@ -156,15 +247,14 @@ $(document).ready(function() {
             $('#badge_stock_info').removeClass('d-none');
             $('#lbl_stock').text(`${stockDisponible} ${unidad}`);
 
-            // Aplicar regla de máximo stock en jQuery Validation
             $('#input_estimada').rules('add', {
                 max: stockDisponible,
-                messages: { max: `La cantidad estimada no puede superar el stock disponible (${stockDisponible} ${unidad})` }
+                messages: { max: `Excede el stock en bodega (${stockDisponible} ${unidad})` }
             });
 
             $('#input_utilizada').rules('add', {
                 max: stockDisponible,
-                messages: { max: `La cantidad utilizada supera el stock disponible en bodega (${stockDisponible} ${unidad})` }
+                messages: { max: `Excede el stock en bodega (${stockDisponible} ${unidad})` }
             });
         } else {
             $('#badge_stock_info').addClass('d-none');
