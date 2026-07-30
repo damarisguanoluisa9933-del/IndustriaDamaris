@@ -16,6 +16,8 @@ DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 
 # Permitir todos los hosts en desarrollo/despliegue (o leídos de variables de entorno)
 ALLOWED_HOSTS = ['*']
+if 'RENDER_EXTERNAL_HOSTNAME' in os.environ:
+    ALLOWED_HOSTS.append(os.environ['RENDER_EXTERNAL_HOSTNAME'])
 
 # Aplicaciones instaladas
 INSTALLED_APPS = [
@@ -59,9 +61,6 @@ TEMPLATES = [
 WSGI_APPLICATION = 'IndustriaDamaris.wsgi.application'
 
 # BASE DE DATOS CONFIGURADA CON POSTGRESQL
-# Si la variable de entorno DATABASE_URL existe (en el servidor de producción/Render/Railway), la usa.
-# Si no existe (en tu laptop), usará la configuración por defecto de PostgreSQL local.
-
 DATABASES = {
     'default': dj_database_url.config(
         default=os.environ.get(
@@ -97,11 +96,24 @@ USE_TZ = True
 
 # Archivos estáticos (CSS, JS, Imágenes del tema)
 STATIC_URL = '/static/'
-STATICFILES_DIRS = (os.path.join(BASE_DIR, 'IndustriaDamaris/static'),)
+
+STATIC_DIR_PATH = os.path.join(BASE_DIR, 'IndustriaDamaris/static')
+if os.path.exists(STATIC_DIR_PATH):
+    STATICFILES_DIRS = [STATIC_DIR_PATH]
+
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
-# Manejo eficiente de estáticos en producción
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+# Configuración de almacenamiento estático compatible para WhiteNoise
+# Configuración de almacenamiento estático compatible para WhiteNoise
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage",
+    },
+}
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
 
 # Archivos multimedia subidos por los usuarios
 MEDIA_URL = '/media/'
