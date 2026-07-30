@@ -5,40 +5,40 @@
         <div class="col-md-8">
             <div class="card shadow border-0">
                 <div class="card-header bg-warning text-dark">
-                    <h4 class="mb-0">Editar Línea de Ensamblaje</h4>
+                    <h4 class="mb-0"><i class="bi bi-pencil-square me-2"></i>Editar Línea de Ensamblaje</h4>
                 </div>
                 <div class="card-body">
                     <form id="frm_editar_linea" action="{% url 'editar_linea' linea.id %}" method="post" enctype="multipart/form-data">
                         {% csrf_token %}
                         
-                        <!-- Nombre de la Línea -->
                         <div class="mb-3">
                             <label class="form-label" for="nombre"><b>Nombre de la Línea:</b></label>
-                            <input type="text" class="form-control" id="nombre" name="nombre" value="{{ linea.nombre }}" required>
+                            <input type="text" class="form-control" id="nombre" name="nombre" value="{{ linea.nombre }}">
                         </div>
                         
-                        <!-- Código Identificador -->
                         <div class="mb-3">
                             <label class="form-label" for="codigo"><b>Código Identificador:</b></label>
-                            <input type="text" class="form-control" id="codigo" name="codigo" value="{{ linea.codigo }}" required>
+                            <input type="text" class="form-control" id="codigo" name="codigo" value="{{ linea.codigo }}">
                         </div>
                         
-                        <!-- Descripción -->
                         <div class="mb-3">
                             <label class="form-label" for="descripcion"><b>Descripción:</b></label>
                             <textarea class="form-control" id="descripcion" name="descripcion" rows="3">{{ linea.descripcion }}</textarea>
                         </div>
                         
-                        <!-- Imagen Actual / Reemplazar -->
                         <div class="mb-3">
-                            <label class="form-label" for="foto_linea"><b>Imagen Actual / Reemplazar:</b></label>
-                            <input type="file" id="foto_linea" class="form-control" name="foto" accept="image/jpeg,image/png,image/gif,image/webp">
+                            <label class="form-label" for="foto_linea"><b>Imagen Actual / Reemplazar (Obligatoria):</b></label>
+                            <input type="file" id="foto_linea" class="form-control" name="foto" accept="image/jpeg,image/png,image/jpg,image/webp">
                             <div id="error-foto"></div>
                         </div>
                         
                         <div class="d-flex justify-content-between mt-4">
-                            <a href="{% url 'listado_lineas' %}" class="btn btn-outline-secondary">Cancelar</a>
-                            <button type="submit" id="btn_guardar" class="btn btn-warning">Actualizar Línea</button>
+                            <a href="{% url 'listado_lineas' %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-x-circle me-1"></i>Cancelar
+                            </a>
+                            <button type="submit" id="btn_guardar" class="btn btn-warning">
+                                <i class="bi bi-arrow-repeat me-1"></i>Actualizar Línea
+                            </button>
                         </div>
                     </form>
                 </div>
@@ -47,31 +47,42 @@
     </div>
 </div>
 
-<!-- Scripts de soporte para jQuery Validate (extensión de imágenes) -->
-<script src="https://cdn.jsdelivr.net/npm/jquery-validation@1.19.5/dist/additional-methods.min.js"></script>
-
 <script>
 $(document).ready(function() {
 
-    // 1. REGLAS PERSONALIZADAS DE SEGURIDAD
-    $.validator.addMethod("nombreValido", function(value, element) {
-        return this.optional(element) || /^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s\-\(\)]+$/.test($.trim(value));
-    }, "No se permiten caracteres especiales como {}, <>, $, etc.");
+    $.validator.addMethod("nombreReal", function(value, element) {
+        var texto = $.trim(value);
+        if (this.optional(element)) return true;
+        if (!/^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s\-\(\)]+$/.test(texto)) return false;
+        if (!/[a-zA-ZáéíóúÁÉÍÓÚñÑ]/.test(texto)) return false;
+        if (/^\d+$/.test(texto)) return false;
+        if (/(.)\1{3,}/.test(texto)) return false;
+        return true;
+    }, "Ingrese un nombre de línea válido.");
 
-    $.validator.addMethod("codigoValido", function(value, element) {
-        return this.optional(element) || /^[a-zA-Z0-9\-_]+$/.test($.trim(value));
-    }, "El código solo puede contener letras, números y guiones (- _).");
+    $.validator.addMethod("codigoMixto", function(value, element) {
+        var cod = $.trim(value);
+        if (this.optional(element)) return true;
+        if (!/^[a-zA-Z0-9\-_]+$/.test(cod)) return false;
+        return /[a-zA-Z]/.test(cod);
+    }, "El código no puede ser solo números (debe contener letras).");
 
-    // 2. CONFIGURACIÓN DEL PLUGIN DE IMAGEN
+    $.validator.addMethod("extensionImagen", function(value, element) {
+        {% if linea.foto %}
+        if (value === "") return true;
+        {% endif %}
+        return /\.(jpg|jpeg|png|webp)$/i.test(value);
+    }, "Formato no permitido. Cargue únicamente archivos de imagen (.jpg, .png, .webp).");
+
     $("#foto_linea").fileinput({
         language: 'es', 
         showUpload: false, 
         dropZoneEnabled: true, 
         maxFileCount: 1,
         allowedFileTypes: ['image'],
-        allowedFileExtensions: ['jpg', 'jpeg', 'png', 'gif', 'webp'],
+        allowedFileExtensions: ['jpg', 'jpeg', 'png', 'webp'],
         {% if linea.foto %}
-        initialPreview: ["<img src='{{ linea.foto.url }}' class='kv-preview-data file-preview-image' style='max-width:100%;'>"],
+        initialPreview: ["<img src='{{ linea.foto.url }}' class='kv-preview-data file-preview-image' style='max-width:100%; max-height:160px;'>"],
         initialPreviewAsData: false,
         {% endif %}
     });
@@ -80,52 +91,46 @@ $(document).ready(function() {
         $(this).valid();
     });
 
-    // 3. VALIDACIÓN ESTRICTA DEL FORMULARIO
     $("#frm_editar_linea").validate({
-        // Fuerza la validación de campos ocultos o modificados por plugins
         ignore: [],
         rules: { 
             nombre: { 
                 required: true,
                 minlength: 3,
                 maxlength: 100,
-                nombreValido: true
+                nombreReal: true
             }, 
             codigo: { 
                 required: true,
-                minlength: 2,
+                minlength: 3,
                 maxlength: 20,
-                codigoValido: true
+                codigoMixto: true
             },
             descripcion: {
                 maxlength: 500
             },
             foto: {
-                required: false,
-                extension: "jpg|jpeg|png|gif|webp"
+                required: true,       // OBLIGATORIO: No permite guardar si está vacío
+                extensionImagen: true // OBLIGATORIO: Bloquea archivos no permitidos como PDF
             }
         },
         messages: {
             nombre: {
-                required: "Por favor, ingrese el nombre de la línea.",
-                minlength: "El nombre debe tener al menos 3 caracteres.",
-                maxlength: "El nombre no puede superar los 100 caracteres."
+                required: "Por favor, ingrese el nombre de la línea."
             },
             codigo: {
-                required: "Por favor, ingrese el código identificador.",
-                minlength: "El código debe tener al menos 2 caracteres.",
-                maxlength: "El código no puede superar los 20 caracteres."
+                required: "Por favor, ingrese el código identificador."
             },
             descripcion: {
                 maxlength: "La descripción no puede superar los 500 caracteres."
             },
             foto: {
-                extension: "Formato no permitido. Ingrese únicamente un archivo de imagen (.jpg, .png, .gif, .webp)."
+                required: "Debe confirmar o reemplazar la foto de la línea.",
+                extensionImagen: "Solo se aceptan archivos de imagen (.jpg, .png, .webp)."
             }
         },
         errorElement: 'label',
         errorClass: 'error text-danger fw-bold mt-1 d-block',
-        
         highlight: function(element) {
             $(element).addClass('is-invalid error').removeClass('is-valid');
         },
@@ -138,10 +143,6 @@ $(document).ready(function() {
             } else {
                 error.insertAfter(element);
             }
-        },
-        // BLOQUEO ABSOLUTO: Solo si el formulario es 100% válido se envía al servidor Django
-        submitHandler: function(form) {
-            form.submit();
         }
     });
 });

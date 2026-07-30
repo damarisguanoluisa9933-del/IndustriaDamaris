@@ -50,7 +50,8 @@
     <script src="{% static 'vendor/fileinput/fileinput.min.js' %}"></script>
     <script src="{% static 'vendor/fileinput/es.js' %}"></script>
     <script src="{% static 'vendor/fileinput/theme.min.js' %}"></script>
- <!--   MOSTRANDO MENSAJES DE ERROR EN ROJO -->
+
+    <!-- MOSTRANDO MENSAJES DE ERROR EN ROJO -->
     <style>
         label.error { color: #dc3545 !important; font-size: 13px; font-weight: bold; margin-top: 5px; display: block; }
         input.error, select.error, textarea.error { border-color: #dc3545 !important; }
@@ -58,7 +59,7 @@
 </head>
 
 <body>
-    <!-- Spinner/Preloader sin la clase 'show' para no bloquear la pantalla -->
+    <!-- Spinner/Preloader -->
     <div id="spinner" class="bg-white position-fixed translate-middle w-100 vh-100 top-50 start-50 d-none align-items-center justify-content-center">
         <div class="spinner-grow text-primary" style="width: 3rem; height: 3rem;" role="status">
             <span class="sr-only">Cargando...</span>
@@ -234,13 +235,14 @@
         }
     </script>
 
+    <!-- Alertas con SweetAlert2 usando el filtro |safe para escapar comillas HTML correctamente -->
     {% if messages %}
         {% for mensaje in messages %}
             <script>
                 Swal.fire({
                     icon: '{% if "success" in mensaje.tags %}success{% else %}error{% endif %}',
                     title: 'Mensaje del Sistema',
-                    text: '{{ mensaje }}',
+                    text: '{{ mensaje|safe }}',
                     confirmButtonColor: '#0d6efd'
                 });
             </script>

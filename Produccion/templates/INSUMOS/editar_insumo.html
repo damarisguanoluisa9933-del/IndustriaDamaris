@@ -4,40 +4,54 @@
     <div class="row justify-content-center">
         <div class="col-md-8">
             <div class="card shadow border-0">
-                <div class="card-header bg-warning text-dark"><h4 class="mb-0">Editar Insumo</h4></div>
+                <div class="card-header bg-warning text-dark">
+                    <h4 class="mb-0"><i class="bi bi-pencil-square me-2"></i>Editar Insumo / Materia Prima</h4>
+                </div>
                 <div class="card-body">
                     <form id="frm_editar_insumo" action="{% url 'editar_insumo' insumo.id %}" method="post" enctype="multipart/form-data">
                         {% csrf_token %}
+                        
                         <div class="mb-3">
                             <label class="form-label"><b>Nombre del Insumo:</b></label>
-                            <input type="text" class="form-control" name="nombre" value="{{ insumo.nombre }}">
+                            <input type="text" class="form-control" name="nombre" value="{{ insumo.nombre }}" placeholder="Ej: Polietileno de Alta Densidad">
                         </div>
+                        
                         <div class="mb-3">
                             <label class="form-label"><b>Código de Referencia:</b></label>
-                            <input type="text" class="form-control" name="codigo" value="{{ insumo.codigo }}">
+                            <input type="text" class="form-control" name="codigo" value="{{ insumo.codigo }}" placeholder="Ej: INS-001">
                         </div>
+                        
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label class="form-label"><b>Unidad de Medida:</b></label>
                                 <select class="form-select" name="unidad_medida">
-                                    <option value="Kg" {% if insumo.unidad_medida == 'Kg' %}selected{% endif %}>Kilogramos</option>
-                                    <option value="Mtrs" {% if insumo.unidad_medida == 'Mtrs' %}selected{% endif %}>Metros</option>
-                                    <option value="Unidades" {% if insumo.unidad_medida == 'Unidades' %}selected{% endif %}>Unidades</option>
-                                    <option value="Ltrs" {% if insumo.unidad_medida == 'Ltrs' %}selected{% endif %}>Litros</option>
+                                    <option value="Kg" {% if insumo.unidad_medida == 'Kg' %}selected{% endif %}>Kilogramos (Kg)</option>
+                                    <option value="Mtrs" {% if insumo.unidad_medida == 'Mtrs' %}selected{% endif %}>Metros (Mtrs)</option>
+                                    <option value="Unidades" {% if insumo.unidad_medida == 'Unidades' %}selected{% endif %}>Unidades (Unid)</option>
+                                    <option value="Ltrs" {% if insumo.unidad_medida == 'Ltrs' %}selected{% endif %}>Litros (Ltrs)</option>
+                                    <option value="Gramos" {% if insumo.unidad_medida == 'Gramos' %}selected{% endif %}>Gramos (g)</option>
+                                    <option value="Rollos" {% if insumo.unidad_medida == 'Rollos' %}selected{% endif %}>Rollos</option>
                                 </select>
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label class="form-label"><b>Stock Disponible:</b></label>
-                                <input type="number" step="0.01" min="0" class="form-control" name="stock_disponible" value="{{ insumo.stock_disponible }}">
+                                <input type="number" step="0.01" min="0" class="form-control" name="stock_disponible" value="{{ insumo.stock_disponible }}" placeholder="Ej: 200.00">
                             </div>
                         </div>
+                        
                         <div class="mb-3">
-                            <label class="form-label"><b>Imagen Actual / Reemplazar:</b></label>
-                            <input type="file" id="foto_insumo" name="foto" accept="image/*">
+                            <label class="form-label"><b>Fotografía del Insumo (Obligatoria):</b></label>
+                            <input type="file" id="foto_insumo" name="foto" accept="image/jpeg,image/png,image/jpg,image/webp">
+                            <div id="error-foto"></div>
                         </div>
+                        
                         <div class="d-flex justify-content-between mt-4">
-                            <a href="{% url 'listado_insumos' %}" class="btn btn-outline-secondary">Cancelar</a>
-                            <button type="submit" class="btn btn-warning">Actualizar Insumo</button>
+                            <a href="{% url 'listado_insumos' %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-x-circle me-1"></i>Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-warning">
+                                <i class="bi bi-arrow-repeat me-1"></i>Actualizar Insumo
+                            </button>
                         </div>
                     </form>
                 </div>
@@ -48,14 +62,100 @@
 
 <script>
 $(document).ready(function() {
-    $("#foto_insumo").fileinput({
-        language: 'es', showUpload: false, dropZoneEnabled: true, maxFileCount: 1,
+    $.validator.addMethod("nombreReal", function(value, element) {
+        var texto = $.trim(value);
+        if (this.optional(element)) return true;
+        if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(texto)) return false;
+        if (/(.)\1{3,}/.test(texto)) return false;
+        return (texto.replace(/\s/g, '').length >= 3);
+    }, "Ingrese un nombre de insumo válido con letras variadas.");
+
+    $.validator.addMethod("extensionImagen", function(value, element) {
+        // Si ya tiene una foto guardada en la base de datos y no selecciona una nueva, lo aprueba
         {% if insumo.foto %}
-        initialPreview: ["<img src='{{ insumo.foto.url }}' class='kv-preview-data file-preview-image' style='max-width:100%;'>"],
+        if (value === "") return true;
+        {% endif %}
+        return /\.(jpg|jpeg|png|webp)$/i.test(value);
+    }, "Formato no permitido. Cargue únicamente archivos de imagen (.jpg, .png, .webp).");
+
+    $("#foto_insumo").fileinput({
+        language: 'es',
+        showUpload: false,
+        dropZoneEnabled: true,
+        maxFileCount: 1,
+        allowedFileTypes: ['image'],
+        allowedFileExtensions: ["jpg", "jpeg", "png", "webp"],
+        {% if insumo.foto %}
+        initialPreview: ["<img src='{{ insumo.foto.url }}' class='kv-preview-data file-preview-image' style='max-width:100%; max-height:160px;'>"],
         initialPreviewAsData: false,
         {% endif %}
     });
-    $("#frm_editar_insumo").validate({ rules: { nombre: { required: true }, codigo: { required: true }, stock_disponible: { required: true, number: true, min: 0 } } });
+
+    $("#foto_insumo").on('fileloaded filecleared fileselecterror', function() {
+        $(this).valid();
+    });
+
+    $("#frm_editar_insumo").validate({
+        ignore: [],
+        rules: {
+            nombre: { 
+                required: true, 
+                minlength: 3,
+                nombreReal: true 
+            },
+            codigo: { 
+                required: true, 
+                minlength: 3 
+            },
+            unidad_medida: { 
+                required: true 
+            },
+            stock_disponible: { 
+                required: true, 
+                number: true, 
+                min: 0 
+            },
+            foto: {
+                required: true,       // OBLIGATORIO: No permite guardar si está vacío
+                extensionImagen: true // OBLIGATORIO: Bloquea archivos no permitidos como PDF
+            }
+        },
+        messages: {
+            nombre: { 
+                required: "Por favor, ingrese el nombre del insumo."
+            },
+            codigo: { 
+                required: "El código no puede quedar vacío."
+            },
+            unidad_medida: { 
+                required: "Seleccione una unidad de medida."
+            },
+            stock_disponible: { 
+                required: "Ingrese la cantidad de stock.",
+                number: "Ingrese un número válido.",
+                min: "El stock no puede ser negativo."
+            },
+            foto: {
+                required: "Debe confirmar o seleccionar la foto obligatoria.",
+                extensionImagen: "Solo se aceptan archivos de imagen (.jpg, .png, .webp)."
+            }
+        },
+        errorElement: 'label',
+        errorClass: 'error text-danger fw-bold mt-1 d-block',
+        highlight: function(element) {
+            $(element).addClass('is-invalid error').removeClass('is-valid');
+        },
+        unhighlight: function(element) {
+            $(element).removeClass('is-invalid error').addClass('is-valid');
+        },
+        errorPlacement: function(error, element) {
+            if (element.attr("name") === "foto") {
+                error.appendTo("#error-foto");
+            } else {
+                error.insertAfter(element);
+            }
+        }
+    });
 });
 </script>
 {% endblock %}

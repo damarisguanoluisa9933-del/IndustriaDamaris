@@ -311,47 +311,73 @@ def listado_lineas(request):
     lineas = LineaEnsamblaje.objects.all()
     return render(request, 'LINEA_ENSAMBLAJE/listado_linea.html', {'lineas': lineas})
 
+
+
 @login_required(login_url='login')
 def nueva_linea(request):
-    """Guarda una nueva linea controlando que el codigo sea unico."""
+    """Guarda una nueva línea generando un código secuencial automático (LIN-001) y validando duplicados."""
     if request.method == 'POST':
-        codigo = request.POST.get('codigo')
+        nombre_linea = request.POST.get('nombre', '').strip()
+        codigo = request.POST.get('codigo', '').strip()
         
-        # Bloquea si intentan registrar un codigo que ya existe en la base de datos
+        # 1. Autogenerar el código secuencial si viene vacío o con el formato base 'LIN-'
+        if not codigo or codigo == 'LIN-':
+            ultimo_id = LineaEnsamblaje.objects.count() + 1
+            codigo = f"LIN-{ultimo_id:03d}"
+            while LineaEnsamblaje.objects.filter(codigo=codigo).exists():
+                ultimo_id += 1
+                codigo = f"LIN-{ultimo_id:03d}"
+
+        # 2. Control estricto para evitar códigos duplicados en la base de datos
         if LineaEnsamblaje.objects.filter(codigo=codigo).exists():
-            messages.error(request, f'El código de línea {codigo} ya pertenece a otra línea.')
-            return render(request, 'LINEA_ENSAMBLAJE/nueva_linea.html')
-        # Si el código no existe, continúa y guarda en la base de datos
+            messages.error(request, f'El código de línea "{codigo}" ya está registrado en el sistema.')
+            return render(request, 'LINEA_ENSAMBLAJE/nueva_linea.html', {'codigo_sugerido': codigo})
+
+        # 3. Guardar en la base de datos
         LineaEnsamblaje.objects.create(
-            nombre=request.POST.get('nombre'),
+            nombre=nombre_linea,
             codigo=codigo,
-            descripcion=request.POST.get('descripcion', ''),
+            descripcion=request.POST.get('descripcion', '').strip(),
             foto=request.FILES.get('foto')
         )
-        messages.success(request, 'Línea de ensamblaje registrada correctamente.')
+        
+        # 4. Mensaje de éxito limpio usando el nombre de la línea
+        messages.success(request, f'Línea de ensamblaje "{nombre_linea}" registrada correctamente.')
         return redirect('listado_lineas')
 
-    return render(request, 'LINEA_ENSAMBLAJE/nueva_linea.html')
+    # Al cargar la página por primera vez, sugerimos el siguiente código libre (ej. LIN-001)
+    ultimo_id = LineaEnsamblaje.objects.count() + 1
+    codigo_sugerido = f"LIN-{ultimo_id:03d}"
+    while LineaEnsamblaje.objects.filter(codigo=codigo_sugerido).exists():
+        ultimo_id += 1
+        codigo_sugerido = f"LIN-{ultimo_id:03d}"
+
+    return render(request, 'LINEA_ENSAMBLAJE/nueva_linea.html', {'codigo_sugerido': codigo_sugerido})
+
 
 @login_required(login_url='login')
 def editar_linea(request, id):
-    """Modifica una linea existente verificando que el codigo no este repetido en otra linea."""
+    """Modifica una línea existente asegurando que el código no pertenezca a otra línea registrada."""
     linea = get_object_or_404(LineaEnsamblaje, id=id)
+    
     if request.method == 'POST':
-        codigo = request.POST.get('codigo')
+        nombre_linea = request.POST.get('nombre', '').strip()
+        codigo = request.POST.get('codigo', '').strip()
         
-        # .exclude(id=id) significa: "Busca si existe ese codigo pero ignora la linea que estoy editando actualmente"
+        # Validación de duplicados excluyendo el ID de la línea actual
         if LineaEnsamblaje.objects.filter(codigo=codigo).exclude(id=id).exists():
-            messages.error(request, f'El código de línea {codigo} ya pertenece a otra línea.')
+            messages.error(request, f'El código "{codigo}" ya está siendo utilizado por otra línea de ensamblaje.')
             return render(request, 'LINEA_ENSAMBLAJE/editar_linea.html', {'linea': linea})
 
-        linea.nombre = request.POST.get('nombre')
+        linea.nombre = nombre_linea
         linea.codigo = codigo
-        linea.descripcion = request.POST.get('descripcion')
+        linea.descripcion = request.POST.get('descripcion', '').strip()
+        
         if request.FILES.get('foto'):
             linea.foto = request.FILES.get('foto')
+            
         linea.save()
-        messages.success(request, 'Línea actualizada correctamente.')
+        messages.success(request, f'Línea "{nombre_linea}" actualizada correctamente.')
         return redirect('listado_lineas')
 
     return render(request, 'LINEA_ENSAMBLAJE/editar_linea.html', {'linea': linea})
@@ -578,27 +604,46 @@ def listado_insumos(request):
     """Lista todos los insumos y materias primas."""
     insumos = Insumo.objects.all()
     return render(request, 'INSUMOS/listado_insumo.html', {'insumos': insumos})
+@login_required(login_url='login')
 
 @login_required(login_url='login')
 def nuevo_insumo(request):
-    """Registra una nueva materia prima validando el codigo de insumo."""
+    """Registra una nueva materia prima validando el código y mostrando el nombre en la alerta."""
     if request.method == 'POST':
-        codigo = request.POST.get('codigo')
+        nombre_insumo = request.POST.get('nombre', '').strip()
+        codigo = request.POST.get('codigo', '').strip()
+        
+        # Generación automática de código si no ingresaron uno personalizado
+        if not codigo or codigo == 'INS-':
+            ultimo_id = Insumo.objects.count() + 1
+            codigo = f"INS-{ultimo_id:03d}"
+            while Insumo.objects.filter(codigo=codigo).exists():
+                ultimo_id += 1
+                codigo = f"INS-{ultimo_id:03d}"
+
         if Insumo.objects.filter(codigo=codigo).exists():
             messages.error(request, f'El código de insumo "{codigo}" ya existe.')
-            return render(request, 'INSUMOS/nuevo_insumo.html')
+            return render(request, 'INSUMOS/nuevo_insumo.html', {'codigo_sugerido': codigo})
 
         Insumo.objects.create(
-            nombre=request.POST.get('nombre'),
+            nombre=nombre_insumo,
             codigo=codigo,
             unidad_medida=request.POST.get('unidad_medida'),
             stock_disponible=request.POST.get('stock_disponible', 0),
             foto=request.FILES.get('foto')
         )
-        messages.success(request, 'Insumo registrado correctamente.')
+        # Aquí se usa el NOMBRE del insumo en lugar del código:
+        messages.success(request, f'Insumo "{nombre_insumo}" registrado correctamente.')
         return redirect('listado_insumos')
 
-    return render(request, 'INSUMOS/nuevo_insumo.html')
+    # Código sugerido para el campo de formulario
+    ultimo_id = Insumo.objects.count() + 1
+    codigo_sugerido = f"INS-{ultimo_id:03d}"
+    while Insumo.objects.filter(codigo=codigo_sugerido).exists():
+        ultimo_id += 1
+        codigo_sugerido = f"INS-{ultimo_id:03d}"
+
+    return render(request, 'INSUMOS/nuevo_insumo.html', {'codigo_sugerido': codigo_sugerido})
 
 @login_required(login_url='login')
 def editar_insumo(request, id):
