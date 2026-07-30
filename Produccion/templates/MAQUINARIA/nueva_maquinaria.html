@@ -1,0 +1,208 @@
+{% extends '../plantilla.html' %}
+{% load static %}
+
+{% block contenido %}
+
+<!-- Contenedor Principal: Registro de Maquinaria -->
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow border-0">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0"><i class="bi bi-cpu-fill me-2"></i>Registrar Maquinaria</h4>
+                </div>
+                <div class="card-body">
+                    <!-- Formulario principal -->
+                    <form id="frm_maquinaria" action="{% url 'nueva_maquinaria' %}" method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        <!-- Campo 1: Nombre de la Máquina -->
+                        <div class="mb-3">
+                            <label class="form-label" for="nombre"><b>Nombre de la Máquina:</b></label>
+                            <input type="text" class="form-control" id="nombre" name="nombre" placeholder="Ej: Selladora Automática Industrial">
+                        </div>
+
+                        <!-- Campo 2: Código de Inventario -->
+                        <div class="mb-3">
+                            <label class="form-label" for="codigo_inventario"><b>Código de Inventario:</b></label>
+                            <input type="text" class="form-control" id="codigo_inventario" name="codigo_inventario" placeholder="Ej: MAQ-SEL-001">
+                        </div>
+
+                        <!-- Campo 3: Línea de Ensamblaje -->
+                        <div class="mb-3">
+                            <label class="form-label" for="linea_id"><b>Línea de Ensamblaje:</b></label>
+                            <select class="form-select" id="linea_id" name="linea_id">
+                                <option value="">-- Seleccione una Línea --</option>
+                                {% for linea in lineas %}
+                                    <option value="{{ linea.id }}">{{ linea.nombre }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <!-- Campo 4: Estado Inicial -->
+                        <div class="mb-3">
+                            <label class="form-label" for="estado"><b>Estado Inicial:</b></label>
+                            <select class="form-select" id="estado" name="estado">
+                                <option value="">-- Seleccione un Estado --</option>
+                                <option value="Operativa" selected>Operativa</option>
+                                <option value="En Mantenimiento">En Mantenimiento</option>
+                                <option value="Detenida">Detenida</option>
+                                <option value="Falla">Falla / Parada No Planificada</option>
+                            </select>
+                        </div>
+
+                        <!-- Campo 5: Horas de Uso Acumuladas -->
+                        <div class="mb-3">
+                            <label class="form-label" for="horas_uso"><b>Horas de Uso Acumuladas:</b></label>
+                            <input type="text" inputmode="numeric" class="form-control" id="horas_uso" name="horas_uso" value="0" maxlength="6">
+                        </div>
+
+                        <!-- Campo 6: Fotografía -->
+                        <div class="mb-3">
+                            <label class="form-label" for="foto_maquina"><b>Fotografía de la Máquina:</b></label>
+                            <input type="file" id="foto_maquina" name="foto" accept="image/*">
+                        </div>
+
+                        <!-- Botones de Acción -->
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{% url 'listado_maquinarias' %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-x-circle me-1"></i>Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-save me-1"></i>Guardar Máquina
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+$(document).ready(function() {
+
+    // 1. Método personalizado para denegar PDFs y asegurar que sea imagen
+    $.validator.addMethod("extensionImagen", function(value, element) {
+        if (this.optional(element) || !element.files || element.files.length === 0) {
+            return false; // Retorna false si no se selecciona ningún archivo
+        }
+        var file = element.files[0];
+        var extensionesPermitidas = ["jpg", "jpeg", "png", "gif", "webp"];
+        var ext = file.name.split('.').pop().toLowerCase();
+        
+        return $.inArray(ext, extensionesPermitidas) !== -1;
+    }, "Solo se permiten imágenes (JPG, JPEG, PNG, GIF, WEBP). No se permiten archivos PDF u otros formatos.");
+
+    // Método personalizado: Exige texto real
+    $.validator.addMethod("nombreReal", function(value, element) {
+        return this.optional(element) || (/[a-zA-ZáéíóúÁÉÍÓÚñÑ]{3,}/.test(value) && /^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s\-\(\)]+$/.test(value));
+    }, "El nombre debe incluir al menos un texto válido (no solo ceros ni números).");
+
+    // Método personalizado: Código no puede ser solo ceros
+    $.validator.addMethod("codigoReal", function(value, element) {
+        return this.optional(element) || (/^[a-zA-Z0-9\-_]+$/.test(value) && !/^0+$/.test(value));
+    }, "Ingrese un código de inventario válido (no puede ser solo ceros).");
+
+    // Método personalizado: Horas de uso (0 a 100,000)
+    $.validator.addMethod("soloNumerosEnteros", function(value, element) {
+        if (this.optional(element)) return false;
+        var num = parseInt(value, 10);
+        return /^[0-9]+$/.test(value) && !isNaN(num) && num >= 0 && num <= 100000;
+    }, "Ingrese una cantidad de horas válida (entre 0 y 100,000).");
+
+    // Limpieza dinámica del input de horas
+    $("#horas_uso").on("input", function() {
+        var val = this.value.replace(/[^0-9]/g, '');
+        if (val.length > 1 && val.startsWith('0')) {
+            val = parseInt(val, 10).toString();
+            if (isNaN(val)) val = '0';
+        }
+        this.value = val;
+    });
+
+    // 2. Inicializar Bootstrap FileInput
+    $("#foto_maquina").fileinput({
+        language: 'es',
+        showUpload: false,
+        dropZoneEnabled: true,
+        maxFileCount: 1,
+        allowedFileTypes: ['image'],
+        allowedFileExtensions: ["jpg", "jpeg", "png", "gif", "webp"]
+    });
+
+    // Revalidar inmediatamente al seleccionar o borrar la foto
+    $('#foto_maquina').on('change fileclear filecleared', function() {
+        $("#frm_maquinaria").validate().element("#foto_maquina");
+    });
+
+    // 3. Reglas de Validación con jQuery Validate
+    $("#frm_maquinaria").validate({
+        errorElement: 'label',
+        errorClass: 'error',
+        rules: {
+            nombre: {
+                required: true,
+                minlength: 3,
+                maxlength: 100,
+                nombreReal: true
+            },
+            codigo_inventario: {
+                required: true,
+                minlength: 3,
+                maxlength: 50,
+                codigoReal: true
+            },
+            linea_id: {
+                required: true
+            },
+            estado: {
+                required: true
+            },
+            horas_uso: {
+                required: true,
+                soloNumerosEnteros: true
+            },
+            foto: {
+                required: true,       // OBLIGATORIO: No permite guardar si está vacío
+                extensionImagen: true // OBLIGATORIO: Bloquea archivos no permitidos como PDF
+            }
+        },
+        messages: {
+            nombre: {
+                required: "El nombre de la máquina es obligatorio.",
+                minlength: "El nombre debe tener al menos 3 caracteres.",
+                maxlength: "El nombre no puede superar los 100 caracteres."
+            },
+            codigo_inventario: {
+                required: "El código de inventario es obligatorio.",
+                minlength: "El código debe tener al menos 3 caracteres.",
+                maxlength: "El código no puede superar los 50 caracteres."
+            },
+            linea_id: {
+                required: "Por favor, seleccione una línea de ensamblaje."
+            },
+            estado: {
+                required: "Por favor, seleccione el estado inicial de la máquina."
+            },
+            horas_uso: {
+                required: "Las horas de uso son obligatorias."
+            },
+            foto: {
+                required: "Debe seleccionar una fotografía de la máquina obligatoriamente.",
+                extensionImagen: "Formato no permitido. Seleccione únicamente una imagen (JPG, PNG, GIF, WEBP)."
+            }
+        },
+        errorPlacement: function(error, element) {
+            if (element.attr("name") === "foto") {
+                // Ubica el mensaje de error debajo del widget del FileInput
+                error.insertAfter(element.closest('.mb-3'));
+            } else {
+                error.insertAfter(element);
+            }
+        }
+    });
+});
+</script>
+
+{% endblock %}

@@ -1,0 +1,61 @@
+{% extends '../plantilla.html' %}
+{% block contenido %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow border-0">
+                <div class="card-header bg-warning text-dark"><h4 class="mb-0">Editar Insumo</h4></div>
+                <div class="card-body">
+                    <form id="frm_editar_insumo" action="{% url 'editar_insumo' insumo.id %}" method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label class="form-label"><b>Nombre del Insumo:</b></label>
+                            <input type="text" class="form-control" name="nombre" value="{{ insumo.nombre }}">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label"><b>Código de Referencia:</b></label>
+                            <input type="text" class="form-control" name="codigo" value="{{ insumo.codigo }}">
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label"><b>Unidad de Medida:</b></label>
+                                <select class="form-select" name="unidad_medida">
+                                    <option value="Kg" {% if insumo.unidad_medida == 'Kg' %}selected{% endif %}>Kilogramos</option>
+                                    <option value="Mtrs" {% if insumo.unidad_medida == 'Mtrs' %}selected{% endif %}>Metros</option>
+                                    <option value="Unidades" {% if insumo.unidad_medida == 'Unidades' %}selected{% endif %}>Unidades</option>
+                                    <option value="Ltrs" {% if insumo.unidad_medida == 'Ltrs' %}selected{% endif %}>Litros</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label"><b>Stock Disponible:</b></label>
+                                <input type="number" step="0.01" min="0" class="form-control" name="stock_disponible" value="{{ insumo.stock_disponible }}">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label"><b>Imagen Actual / Reemplazar:</b></label>
+                            <input type="file" id="foto_insumo" name="foto" accept="image/*">
+                        </div>
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{% url 'listado_insumos' %}" class="btn btn-outline-secondary">Cancelar</a>
+                            <button type="submit" class="btn btn-warning">Actualizar Insumo</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+$(document).ready(function() {
+    $("#foto_insumo").fileinput({
+        language: 'es', showUpload: false, dropZoneEnabled: true, maxFileCount: 1,
+        {% if insumo.foto %}
+        initialPreview: ["<img src='{{ insumo.foto.url }}' class='kv-preview-data file-preview-image' style='max-width:100%;'>"],
+        initialPreviewAsData: false,
+        {% endif %}
+    });
+    $("#frm_editar_insumo").validate({ rules: { nombre: { required: true }, codigo: { required: true }, stock_disponible: { required: true, number: true, min: 0 } } });
+});
+</script>
+{% endblock %}

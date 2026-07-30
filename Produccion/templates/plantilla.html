@@ -1,0 +1,254 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="utf-8">
+    <title>Industria Damaris - Control de Producción</title>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+
+    <link href="{% static 'img/favicon.ico' %}" rel="icon">
+
+    <!-- Fuentes e Iconos -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.10.0/css/all.min.css" rel="stylesheet">
+    <link href="{% static 'vendor/bootstrap-icons/bootstrap-icons.min.css' %}" rel="stylesheet">
+
+    <!-- Estilos locales y librerías -->
+    <link href="{% static 'lib/animate/animate.min.css' %}" rel="stylesheet">
+    <link href="{% static 'lib/owlcarousel/assets/owl.carousel.min.css' %}" rel="stylesheet">
+    <link href="{% static 'css/bootstrap.min.css' %}" rel="stylesheet">
+    <link href="{% static 'css/style.css' %}" rel="stylesheet">
+    <link href="{% static 'vendor/datatables/dataTables.dataTables.min.css' %}" rel="stylesheet">
+    <link href="{% static 'vendor/datatables/buttons.dataTables.min.css' %}" rel="stylesheet">
+    <link href="{% static 'vendor/sweetalert/sweetalert2.min.css' %}" rel="stylesheet">
+    <link href="{% static 'vendor/fileinput/fileinput.min.css' %}" rel="stylesheet">
+
+    <!-- Dependencias JS globales -->
+    <script src="https://code.jquery.com/jquery-3.6.1.min.js"></script>
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
+    <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
+    <script src="https://unpkg.com/hotkeys-js/dist/hotkeys.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/driver.js@1.0.1/dist/driver.css"/>
+    <script src="https://cdn.jsdelivr.net/npm/driver.js@1.0.1/dist/driver.js.iife.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.min.js"></script>
+
+    <!-- DataTables, SweetAlert2, FileInput y jQuery Validation -->
+    <script src="{% static 'vendor/datatables/dataTables.min.js' %}"></script>
+    <script src="{% static 'vendor/datatables/dataTables.buttons.min.js' %}"></script>
+    <script src="{% static 'vendor/datatables/jszip.min.js' %}"></script>
+    <script src="{% static 'vendor/datatables/pdfmake.min.js' %}"></script>
+    <script src="{% static 'vendor/datatables/vfs_fonts.js' %}"></script>
+    <script src="{% static 'vendor/datatables/buttons.html5.min.js' %}"></script>
+    <script src="{% static 'vendor/datatables/buttons.print.min.js' %}"></script>
+    <script src="{% static 'vendor/sweetalert/sweetalert2.min.js' %}"></script>
+    <script src="{% static 'vendor/jquery-validation/jquery.validate.min.js' %}"></script>
+    <script src="{% static 'vendor/qrcodejs/qrcode.min.js' %}"></script>
+    <script src="{% static 'vendor/fileinput/fileinput.min.js' %}"></script>
+    <script src="{% static 'vendor/fileinput/es.js' %}"></script>
+    <script src="{% static 'vendor/fileinput/theme.min.js' %}"></script>
+ <!--   MOSTRANDO MENSAJES DE ERROR EN ROJO -->
+    <style>
+        label.error { color: #dc3545 !important; font-size: 13px; font-weight: bold; margin-top: 5px; display: block; }
+        input.error, select.error, textarea.error { border-color: #dc3545 !important; }
+    </style>
+</head>
+
+<body>
+    <!-- Spinner/Preloader sin la clase 'show' para no bloquear la pantalla -->
+    <div id="spinner" class="bg-white position-fixed translate-middle w-100 vh-100 top-50 start-50 d-none align-items-center justify-content-center">
+        <div class="spinner-grow text-primary" style="width: 3rem; height: 3rem;" role="status">
+            <span class="sr-only">Cargando...</span>
+        </div>
+    </div>
+
+    <!-- Header / Navbar Principal -->
+    <div class="container-fluid sticky-top bg-white shadow-sm" id="step-navbar">
+        <div class="container">
+            <nav class="navbar navbar-expand-lg navbar-light border-bottom border-2 border-white">
+                <a href="{% url 'inicio' %}" class="navbar-brand">
+                    <h1 class="text-primary m-0"><i class="bi bi-gear-wide-connected me-2"></i>Industria Damaris</h1>
+                </a>
+                
+                <button type="button" class="navbar-toggler ms-auto me-0" data-bs-toggle="collapse" data-bs-target="#navbarCollapse">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <div class="collapse navbar-collapse" id="navbarCollapse">
+                    <div class="navbar-nav ms-auto align-items-center">
+                        <a href="{% url 'inicio' %}" class="nav-item nav-link"><i class="bi bi-house-door-fill me-1"></i>Inicio</a>
+                        <a href="{% url 'dashboard' %}" class="nav-item nav-link" id="step-dashboard"><i class="bi bi-speedometer2 me-1"></i>Dashboard OEE</a>
+                        <a href="{% url 'listado_ordenes' %}" class="nav-item nav-link" id="step-ordenes"><i class="bi bi-card-checklist me-1"></i>Lotes de Producción</a>
+                        <a href="{% url 'listado_lineas' %}" class="nav-item nav-link"><i class="bi bi-diagram-3-fill me-1"></i>Líneas</a>
+                        <a href="{% url 'listado_maquinarias' %}" class="nav-item nav-link" id="step-maquinaria"><i class="bi bi-cpu-fill me-1"></i>Maquinaria</a>
+                        
+                        <!-- Solo el Superusuario / Admin puede gestionar supervisores -->
+                        <div class="nav-item dropdown">
+                            <a href="#!" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
+                                <i class="bi bi-people-fill me-1"></i>Personal e Insumos
+                            </a>
+                            <div class="dropdown-menu bg-light mt-2 border-0 shadow-sm">
+                                {% if user.is_superuser %}
+                                <a href="{% url 'listado_supervisores' %}" class="dropdown-item"><i class="bi bi-person-badge me-1"></i>Supervisores</a>
+                                {% endif %}
+                                <a href="{% url 'listado_operarios' %}" class="dropdown-item"><i class="bi bi-person-workspace me-1"></i>Operarios</a>
+                                <a href="{% url 'listado_insumos' %}" class="dropdown-item"><i class="bi bi-box-seam me-1"></i>Materia Prima</a>
+                            </div>
+                        </div>
+
+                        <a href="{% url 'reporte_desperdicios' %}" class="nav-item nav-link" id="step-reportes"><i class="bi bi-bar-chart-line-fill me-1"></i>Reportes</a>
+
+                        <!-- Botón de Tour Guiado (Driver.js) -->
+                        <button type="button" onclick="iniciarTourInduccion()" class="btn btn-outline-info btn-sm ms-2 me-2" title="Tour de Inducción">
+                            <i class="bi bi-compass-fill"></i> Tour
+                        </button>
+
+                        <!-- Usuario Autenticado / Botón de Cerrar Sesión -->
+                        {% if user.is_authenticated %}
+                        <div class="d-flex align-items-center ms-lg-3">
+                            <span class="badge bg-primary p-2 me-2">
+                                <i class="bi bi-person-circle me-1"></i>
+                                {% if user.first_name %}{{ user.first_name }}{% else %}{{ user.username }}{% endif %}
+                                {% if user.is_superuser %}(Admin){% else %}(Supervisor){% endif %}
+                            </span>
+                            <a href="{% url 'cerrar_sesion' %}" class="btn btn-danger btn-sm" title="Cerrar Sesión">
+                                <i class="bi bi-box-arrow-right"></i> Salir
+                            </a>
+                        </div>
+                        {% else %}
+                        <a href="{% url 'login' %}" class="btn btn-primary btn-sm ms-lg-3">Iniciar Sesión</a>
+                        {% endif %}
+                    </div>
+                </div>
+            </nav>
+        </div>
+    </div>
+
+    <!-- Contenido Dinámico -->
+    <div class="container-fluid py-4 px-lg-5">
+        {% block contenido %}
+        {% endblock %}
+    </div>
+
+    <!-- Pie de Página -->
+    <div class="container-fluid bg-dark text-white-50 footer pt-5">
+        <div class="container py-5">
+            <div class="row g-5">
+                <div class="col-md-6 col-lg-4">
+                    <h1 class="text-white"><i class="bi bi-gear-wide-connected me-2"></i>Industria Damaris</h1>
+                    <p class="mb-0">Monitoreo de producción industrial en tiempo real con control de OEE y gestión de mermas.</p>
+                </div>
+                <div class="col-md-6 col-lg-4">
+                    <h5 class="text-white mb-4">Atajos de Teclado (Hotkeys-js)</h5>
+                    <p class="small mb-1"><kbd>Shift+1</kbd> -> Máquina Operativa</p>
+                    <p class="small mb-1"><kbd>Shift+2</kbd> -> Máquina en Mantenimiento</p>
+                    <p class="small mb-1"><kbd>Shift+3</kbd> -> Máquina Detenida</p>
+                    <p class="small mb-1"><kbd>Shift+4</kbd> -> Parada por Falla</p>
+                    <p class="small mb-0"><kbd>Shift+5</kbd> -> Máquina Inactiva</p>
+                </div>
+                <div class="col-md-6 col-lg-4">
+                    <h5 class="text-white mb-4">Soporte de Planta</h5>
+                    <p><i class="fa fa-map-marker-alt me-3"></i>Vía Alóag - Santo Domingo, Ecuador</p>
+                    <p><i class="fa fa-envelope me-3"></i>soporte@industriadamaris.com</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{% static 'lib/wow/wow.min.js' %}"></script>
+    <script src="{% static 'lib/easing/easing.min.js' %}"></script>
+    <script src="{% static 'lib/waypoints/waypoints.min.js' %}"></script>
+    <script src="{% static 'lib/owlcarousel/owl.carousel.min.js' %}"></script>
+    <script src="{% static 'js/main.js' %}"></script>
+
+    <script>
+        function confirmarEliminacion(event, url) {
+            event.preventDefault();
+            Swal.fire({
+                title: '¿Eliminar este registro?',
+                text: "Esta acción no se puede deshacer.",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc3545',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Sí, eliminar',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.location.href = url;
+                }
+            });
+        }
+
+        // Validación de Cédula Ecuatoriana (Módulo 10), Celular y Nombres
+        $(document).ready(function() {
+            if ($.validator) {
+                $.validator.addMethod("soloLetras", function(value, element) {
+                    return this.optional(element) || /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(value);
+                }, "Este campo solo debe contener letras.");
+
+                $.validator.addMethod("celularEcuador", function(value, element) {
+                    return this.optional(element) || /^09\d{8}$/.test(value);
+                }, "Ingrese un celular válido de Ecuador (Ej: 0991234567).");
+
+                $.validator.addMethod("cedulaEcuador", function(value, element) {
+                    if (this.optional(element)) return true;
+                    if (value.length !== 10) return false;
+                    let provincia = parseInt(value.substring(0, 2), 10);
+                    if (provincia < 1 || provincia > 24) return false;
+                    let digitoVerificador = parseInt(value.substring(9, 10), 10);
+                    let suma = 0;
+                    for (let i = 0; i < 9; i++) {
+                        let valor = parseInt(value.charAt(i), 10);
+                        if (i % 2 === 0) {
+                            valor = valor * 2;
+                            if (valor > 9) valor -= 9;
+                        }
+                        suma += valor;
+                    }
+                    let total = (Math.ceil(suma / 10) * 10) - suma;
+                    if (total === 10) total = 0;
+                    return total === digitoVerificador;
+                }, "La cédula ingresada no es una cédula ecuatoriana válida.");
+            }
+        });
+
+        // FUNCIONALIDAD: Tour de Inducción con Driver.js
+        function iniciarTourInduccion() {
+            const driver = window.driver.js.driver;
+            const driverObj = driver({
+                showProgress: true,
+                steps: [
+                    { element: '#step-navbar', popover: { title: 'Barra Principal', description: 'Acceda a todos los módulos operativos y de gestión de la planta.' } },
+                    { element: '#step-dashboard', popover: { title: 'Dashboard de OEE', description: 'Visualice en tiempo real la efectividad de las máquinas e interrupciones.' } },
+                    { element: '#step-ordenes', popover: { title: 'Gantt & Cola de Fabricación', description: 'Reordene lotes arrastrando tarjetas (jQuery UI) y revise agendas en FullCalendar.' } },
+                    { element: '#step-maquinaria', popover: { title: 'Maquinaria de Planta', description: 'Monitoree estados y use atajos (Shift+1 a Shift+5) para cambiar rápidamente de estado.' } },
+                    { element: '#step-reportes', popover: { title: 'Auditoría de Desperdicios', description: 'Genere reportes descargables en PDF/Excel de la materia prima desperdiciada.' } }
+                ]
+            });
+            driverObj.drive();
+        }
+    </script>
+
+    {% if messages %}
+        {% for mensaje in messages %}
+            <script>
+                Swal.fire({
+                    icon: '{% if "success" in mensaje.tags %}success{% else %}error{% endif %}',
+                    title: 'Mensaje del Sistema',
+                    text: '{{ mensaje }}',
+                    confirmButtonColor: '#0d6efd'
+                });
+            </script>
+        {% endfor %}
+    {% endif %}
+
+    <!-- Bloque indispensable para cargar scripts propios en las demás páginas -->
+    {% block extra_js %}{% endblock %}
+</body>
+
+</html>

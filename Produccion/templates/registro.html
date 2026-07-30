@@ -1,0 +1,158 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <title>Registro de Supervisor - Industria Damaris</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="{% static 'css/bootstrap.min.css' %}" rel="stylesheet">
+    <link href="{% static 'vendor/bootstrap-icons/bootstrap-icons.min.css' %}" rel="stylesheet">
+    <link href="{% static 'vendor/fileinput/fileinput.min.css' %}" rel="stylesheet">
+    <link href="{% static 'vendor/sweetalert/sweetalert2.min.css' %}" rel="stylesheet">
+
+    <style>
+        body {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            min-height: 100vh;
+            padding: 2rem 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Open Sans', sans-serif;
+        }
+        .registro-card {
+            background: #ffffff;
+            border-radius: 16px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            width: 100%;
+            max-width: 650px;
+            padding: 2.5rem;
+        }
+        label.error { color: #dc3545; font-size: 12px; font-weight: bold; margin-top: 4px; display: block; }
+    </style>
+</head>
+<body>
+
+<div class="registro-card">
+    <div class="text-center mb-4">
+        <i class="bi bi-person-badge-fill display-4 text-primary"></i>
+        <h3 class="fw-bold mt-2">Registro de Nuevo Supervisor</h3>
+        <p class="text-muted small">Cree su cuenta para acceder al tablero de control de la planta</p>
+    </div>
+
+    <form id="frm_registro" action="{% url 'registro' %}" method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        
+        <div class="mb-3">
+            <label class="form-label fw-bold">Cédula Ecuatoriana:</label>
+            <input type="text" class="form-control" name="cedula" maxlength="10" placeholder="Ej: 1726354890">
+        </div>
+
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label fw-bold">Nombre:</label>
+                <input type="text" class="form-control" name="nombre" placeholder="Nombres completos">
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label fw-bold">Apellido:</label>
+                <input type="text" class="form-control" name="apellido" placeholder="Apellidos completos">
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label fw-bold">Correo Electrónico:</label>
+            <input type="email" class="form-control" name="correo" placeholder="correo@industriadamaris.com">
+        </div>
+
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label fw-bold">Nombre de Usuario (Login):</label>
+                <input type="text" class="form-control" name="username" placeholder="ejemplo.supervisor">
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label fw-bold">Contraseña:</label>
+                <input type="password" id="contrasena" class="form-control" name="contrasena" placeholder="Mínimo 6 caracteres">
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label fw-bold">Foto de Perfil:</label>
+            <input type="file" id="foto_supervisor" name="foto" accept="image/*">
+        </div>
+
+        <button type="submit" class="btn btn-primary w-100 py-2 fw-bold shadow-sm mb-3">
+            <i class="bi bi-check-circle me-1"></i> Completar Registro
+        </button>
+
+        <div class="text-center">
+            <span class="text-muted small">¿Ya tiene una cuenta?</span>
+            <a href="{% url 'login' %}" class="fw-bold text-decoration-none">Iniciar Sesión</a>
+        </div>
+    </form>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.1.min.js"></script>
+<script src="{% static 'vendor/fileinput/fileinput.min.js' %}"></script>
+<script src="{% static 'vendor/fileinput/es.js' %}"></script>
+<script src="{% static 'vendor/jquery-validation/jquery.validate.min.js' %}"></script>
+<script src="{% static 'vendor/sweetalert/sweetalert2.min.js' %}"></script>
+
+<script>
+$(document).ready(function() {
+    $.validator.addMethod("soloLetras", function(value, element) {
+        return this.optional(element) || /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(value);
+    }, "Solo se permiten letras.");
+
+    $.validator.addMethod("cedulaEcuador", function(value, element) {
+        if (this.optional(element) || value.length !== 10) return false;
+        let prov = parseInt(value.substring(0, 2), 10);
+        if (prov < 1 || prov > 24) return false;
+        let dig = parseInt(value.substring(9, 10), 10), suma = 0;
+        for (let i = 0; i < 9; i++) {
+            let v = parseInt(value.charAt(i), 10);
+            if (i % 2 === 0) { v *= 2; if (v > 9) v -= 9; }
+            suma += v;
+        }
+        let tot = (Math.ceil(suma / 10) * 10) - suma;
+        if (tot === 10) tot = 0;
+        return tot === dig;
+    }, "Cédula ecuatoriana inválida.");
+
+    $("#foto_supervisor").fileinput({ language: 'es', showUpload: false, dropZoneEnabled: true, maxFileCount: 1 });
+
+    $("#frm_registro").validate({
+        rules: {
+            cedula: { required: true, digits: true, cedulaEcuador: true },
+            nombre: { required: true, soloLetras: true },
+            apellido: { required: true, soloLetras: true },
+            correo: { required: true, email: true },
+            username: { required: true, minlength: 3 },
+            contrasena: { required: true, minlength: 6 }
+        },
+        messages: {
+            cedula: { required: "Ingrese su cédula" },
+            nombre: { required: "Ingrese su nombre" },
+            apellido: { required: "Ingrese su apellido" },
+            correo: { required: "Ingrese su correo electrónico" },
+            username: { required: "Defina un usuario para ingresar" },
+            contrasena: { required: "Defina una contraseña", minlength: "Mínimo 6 caracteres" }
+        }
+    });
+});
+</script>
+
+{% if messages %}
+    {% for mensaje in messages %}
+        <script>
+            Swal.fire({
+                icon: '{% if "success" in mensaje.tags %}success{% else %}error{% endif %}',
+                title: 'Mensaje del Sistema',
+                text: '{{ mensaje }}',
+                confirmButtonColor: '#0d6efd'
+            });
+        </script>
+    {% endfor %}
+{% endif %}
+
+</body>
+</html>

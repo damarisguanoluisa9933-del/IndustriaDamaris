@@ -1,0 +1,177 @@
+{% extends '../plantilla.html' %}
+{% load static %}
+
+{% block contenido %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow border-0">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0"><i class="bi bi-person-workspace me-2"></i>Registrar Operario</h4>
+                </div>
+                <div class="card-body">
+                    <form id="frm_operario" action="{% url 'nuevo_operario' %}" method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        <!-- Cédula -->
+                        <div class="mb-3">
+                            <label class="form-label"><b>Cédula Ecuatoriana:</b></label>
+                            <input type="text" class="form-control" name="cedula" id="cedula" maxlength="10" placeholder="Ej: 0501234567">
+                        </div>
+
+                        <!-- Nombres y Apellidos -->
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label"><b>Nombres:</b></label>
+                                <input type="text" class="form-control" name="nombres" id="nombres" placeholder="Nombres completos">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label"><b>Apellidos:</b></label>
+                                <input type="text" class="form-control" name="apellidos" id="apellidos" placeholder="Apellidos completos">
+                            </div>
+                        </div>
+
+                        <!-- Teléfono y Correo -->
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label"><b>Teléfono Celular (09...):</b></label>
+                                <input type="text" class="form-control" name="telefono" id="telefono" maxlength="10" placeholder="Ej: 0991234567">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label"><b>Correo Electrónico:</b></label>
+                                <input type="email" class="form-control" name="correo" id="correo" placeholder="correo@ejemplo.com">
+                            </div>
+                        </div>
+
+                        <!-- Fotografía -->
+                        <div class="mb-3">
+                            <label class="form-label"><b>Fotografía:</b></label>
+                            <input type="file" id="foto_operario" name="foto" accept="image/*">
+                        </div>
+
+                        <!-- Botones -->
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{% url 'listado_operarios' %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-x-circle me-1"></i>Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-save me-1"></i>Guardar Operario
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+$(document).ready(function() {
+    // 1. Método personalizado para denegar PDFs y asegurar que sea imagen
+    $.validator.addMethod("extensionImagen", function(value, element) {
+        if (this.optional(element) || !element.files || element.files.length === 0) {
+            return false; // Retorna false si no se selecciona ningún archivo
+        }
+        var file = element.files[0];
+        var extensionesPermitidas = ["jpg", "jpeg", "png", "webp"];
+        var ext = file.name.split('.').pop().toLowerCase();
+        
+        return $.inArray(ext, extensionesPermitidas) !== -1;
+    }, "Solo se permiten imágenes (JPG, JPEG, PNG, WEBP). No se permiten archivos PDF u otros formatos.");
+
+    // 2. Inicializar Bootstrap FileInput
+    $("#foto_operario").fileinput({ 
+        language: 'es', 
+        showUpload: false, 
+        dropZoneEnabled: true, 
+        maxFileCount: 1,
+        allowedFileTypes: ['image'],
+        allowedFileExtensions: ['jpg', 'jpeg', 'png', 'webp']
+    });
+
+    // Revalidar inmediatamente al seleccionar o borrar la foto
+    $('#foto_operario').on('change fileclear filecleared', function() {
+        $("#frm_operario").validate().element("#foto_operario");
+    });
+
+    // 3. Reglas de Validación con jQuery Validate
+    $("#frm_operario").validate({
+        errorElement: 'label',
+        errorClass: 'error',
+        rules: {
+            cedula: { 
+                required: true, 
+                digits: true, 
+                minlength: 10,
+                maxlength: 10,
+                cedulaEcuador: true  // Heredado de plantilla.html
+            },
+            nombres: { 
+                required: true, 
+                soloLetras: true,    // Heredado de plantilla.html
+                minlength: 2 
+            },
+            apellidos: { 
+                required: true, 
+                soloLetras: true,    // Heredado de plantilla.html
+                minlength: 2 
+            },
+            telefono: {
+                required: true,
+                digits: true,
+                minlength: 10,
+                maxlength: 10,
+                celularEcuador: true // Heredado de plantilla.html (Valida inicio con 09...)
+            },
+            correo: { 
+                required: true, 
+                email: true 
+            },
+            foto: {
+                required: true,       // OBLIGATORIO: No permite guardar si está vacío
+                extensionImagen: true // OBLIGATORIO: Bloquea archivos no permitidos como PDF
+            }
+        },
+        messages: {
+            cedula: {
+                required: "La cédula es obligatoria.",
+                digits: "Ingrese únicamente números sin espacios ni guiones.",
+                minlength: "La cédula debe tener exactamente 10 dígitos.",
+                maxlength: "La cédula debe tener exactamente 10 dígitos."
+            },
+            nombres: {
+                required: "Los nombres son obligatorios.",
+                minlength: "Ingrese al menos 2 caracteres."
+            },
+            apellidos: {
+                required: "Los apellidos son obligatorios.",
+                minlength: "Ingrese al menos 2 caracteres."
+            },
+            telefono: {
+                required: "El número celular es obligatorio.",
+                digits: "Ingrese únicamente números.",
+                minlength: "El celular debe tener exactamente 10 dígitos.",
+                maxlength: "El celular debe tener exactamente 10 dígitos.",
+                celularEcuador: "El número debe ser un celular válido de Ecuador (ejemplo: 0991234567)."
+            },
+            correo: {
+                required: "El correo electrónico es obligatorio.",
+                email: "Ingrese un correo electrónico válido (ejemplo: usuario@dominio.com)."
+            },
+            foto: {
+                required: "Debe seleccionar una fotografía del operario obligatoriamente.",
+                extensionImagen: "Formato no permitido. Seleccione únicamente una imagen (JPG, PNG, WEBP)."
+            }
+        },
+        errorPlacement: function (error, element) {
+            if (element.attr("name") === "foto") {
+                // Ubica el mensaje de error debajo del widget del FileInput
+                error.insertAfter(element.closest('.mb-3'));
+            } else {
+                error.insertAfter(element);
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

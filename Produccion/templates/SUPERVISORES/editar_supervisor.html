@@ -1,0 +1,153 @@
+{% extends '../plantilla.html' %}
+{% load static %}
+
+{% block contenido %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow border-0">
+                <div class="card-header bg-warning text-dark">
+                    <h4 class="mb-0"><i class="bi bi-pencil-square me-2"></i>Editar Supervisor</h4>
+                </div>
+                <div class="card-body">
+                    <form id="frm_editar_supervisor" action="{% url 'editar_supervisor' supervisor.id %}" method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        <!-- Cédula -->
+                        <div class="mb-3">
+                            <label class="form-label"><b>Cédula Ecuatoriana:</b></label>
+                            <input type="text" class="form-control" name="cedula" id="cedula" value="{{ supervisor.cedula }}" maxlength="10">
+                        </div>
+
+                        <!-- Nombre y Apellido -->
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label"><b>Nombre:</b></label>
+                                <input type="text" class="form-control" name="nombre" id="nombre" value="{{ supervisor.nombre }}">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label"><b>Apellido:</b></label>
+                                <input type="text" class="form-control" name="apellido" id="apellido" value="{{ supervisor.apellido }}">
+                            </div>
+                        </div>
+
+                        <!-- Correo -->
+                        <div class="mb-3">
+                            <label class="form-label"><b>Correo Electrónico:</b></label>
+                            <input type="email" class="form-control" name="correo" id="correo" value="{{ supervisor.correo }}">
+                        </div>
+
+                        <!-- Foto de Perfil / Reemplazar -->
+                        <div class="mb-3">
+                            <label class="form-label"><b>Foto Actual / Reemplazar:</b></label>
+                            <input type="file" id="foto_supervisor" name="foto" accept="image/*">
+                        </div>
+
+                        <!-- Botones -->
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{% url 'listado_supervisores' %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-x-circle me-1"></i>Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-warning">
+                                <i class="bi bi-check-circle me-1"></i>Actualizar Supervisor
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+$(document).ready(function() {
+    // 1. Método personalizado para denegar cualquier archivo que no sea imagen (evita subida de PDFs)
+    $.validator.addMethod("extensionImagen", function(value, element) {
+        if (this.optional(element) || !element.files || element.files.length === 0) {
+            return true; // Pasa si el campo está vacío en edición
+        }
+        var file = element.files[0];
+        var extensionesPermitidas = ["jpg", "jpeg", "png", "webp"];
+        var ext = file.name.split('.').pop().toLowerCase();
+        
+        return $.inArray(ext, extensionesPermitidas) !== -1;
+    }, "Solo se permiten imágenes (JPG, JPEG, PNG, WEBP). No se permiten archivos PDF.");
+
+    // 2. Inicialización de FileInput
+    $("#foto_supervisor").fileinput({
+        language: 'es', 
+        showUpload: false, 
+        dropZoneEnabled: true, 
+        maxFileCount: 1,
+        allowedFileTypes: ['image'], // Bloquea visualmente archivos no de imagen
+        allowedFileExtensions: ['jpg', 'jpeg', 'png', 'webp'],
+        {% if supervisor.foto %}
+        initialPreview: ["<img src='{{ supervisor.foto.url }}' class='kv-preview-data file-preview-image' style='max-width:100%; height:auto;'>"],
+        initialPreviewAsData: false,
+        {% endif %}
+    });
+
+    // 3. Validación estricta del formulario
+    $("#frm_editar_supervisor").validate({
+        errorElement: 'label', // Usa <label> para acoplarse a label.error de la plantilla base
+        errorClass: 'error',
+        rules: {
+            cedula: { 
+                required: true, 
+                digits: true, 
+                minlength: 10,
+                maxlength: 10,
+                cedulaEcuador: true 
+            },
+            nombre: { 
+                required: true, 
+                soloLetras: true,
+                minlength: 2 
+            },
+            apellido: { 
+                required: true, 
+                soloLetras: true,
+                minlength: 2 
+            },
+            correo: { 
+                required: true, 
+                email: true 
+            },
+            foto: {
+                extensionImagen: true // Detiene el submit si seleccionan un PDF
+            }
+        },
+        messages: {
+            cedula: {
+                required: "La cédula es obligatoria.",
+                digits: "Ingrese únicamente números.",
+                minlength: "La cédula debe contener exactamente 10 dígitos.",
+                maxlength: "La cédula debe contener exactamente 10 dígitos."
+            },
+            nombre: {
+                required: "El nombre es obligatorio.",
+                minlength: "El nombre debe tener al menos 2 caracteres."
+            },
+            apellido: {
+                required: "El apellido es obligatorio.",
+                minlength: "El apellido debe tener al menos 2 caracteres."
+            },
+            correo: {
+                required: "El correo electrónico es obligatorio.",
+                email: "Ingrese un correo electrónico válido."
+            },
+            foto: {
+                extensionImagen: "Formato de archivo no permitido. Debe seleccionar una imagen (JPG, PNG, WEBP)."
+            }
+        },
+        errorPlacement: function (error, element) {
+            if (element.attr("name") === "foto") {
+                error.insertAfter(element.closest('.mb-3'));
+            } else {
+                error.insertAfter(element);
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

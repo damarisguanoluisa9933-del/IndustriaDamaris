@@ -1,0 +1,157 @@
+{% extends '../plantilla.html' %}
+{% block contenido %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="card shadow border-0">
+                <div class="card-header bg-warning text-dark"><h4 class="mb-0">Editar Órden de Fabricación</h4></div>
+                <div class="card-body">
+                    <form id="frm_editar_orden" action="{% url 'editar_orden' orden.id %}" method="post">
+                        {% csrf_token %}
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label"><b>Código de Lote:</b></label>
+                                <input type="text" class="form-control" name="codigo_lote" value="{{ orden.codigo_lote }}" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label"><b>Producto:</b></label>
+                                <input type="text" class="form-control" name="producto" value="{{ orden.producto }}" required>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label"><b>Línea:</b></label>
+                                <select class="form-select" name="linea_id" required>
+                                    {% for linea in lineas %}
+                                        <option value="{{ linea.id }}" {% if orden.linea.id == linea.id %}selected{% endif %}>{{ linea.nombre }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label"><b>Máquina:</b></label>
+                                <select class="form-select" name="maquina_id">
+                                    <option value="">-- Sin Asignar --</option>
+                                    {% for maquina in maquinas %}
+                                        <option value="{{ maquina.id }}" {% if orden.maquina and orden.maquina.id == maquina.id %}selected{% endif %}>{{ maquina.nombre }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label"><b>Supervisor:</b></label>
+                                <select class="form-select" name="supervisor_id" required>
+                                    {% for supervisor in supervisores %}
+                                        <option value="{{ supervisor.id }}" {% if orden.supervisor.id == supervisor.id %}selected{% endif %}>{{ supervisor.nombre }} {{ supervisor.apellido }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label"><b>Operario:</b></label>
+                                <select class="form-select" name="operario_id">
+                                    <option value="">-- Sin Asignar --</option>
+                                    {% for operario in operarios %}
+                                        <option value="{{ operario.id }}" {% if orden.operario_encargado and orden.operario_encargado.id == operario.id %}selected{% endif %}>{{ operario.nombres }} {{ operario.apellidos }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- MATERIA PRIMA CON VALIDACIÓN DE STOCK -->
+                        <hr class="my-4">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="text-primary fw-bold mb-0"><i class="bi bi-box-seam me-2"></i>Materia Prima Asignada</h5>
+                            <span id="badge_stock_info" class="badge bg-secondary p-2 d-none">Stock Disponible: <b id="lbl_stock">0</b></span>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label"><b>Materia Prima:</b></label>
+                                <select class="form-select" id="select_insumo" name="insumo_id" required>
+                                    <option value="" data-stock="0">-- Seleccionar --</option>
+                                    {% for insumo in insumos %}
+                                        <option value="{{ insumo.id }}" data-stock="{{ insumo.stock_disponible }}" data-unidad="{{ insumo.unidad_medida }}" {% if detalle_insumo and detalle_insumo.insumo.id == insumo.id %}selected{% endif %}>
+                                            {{ insumo.nombre }} (Stock: {{ insumo.stock_disponible }} {{ insumo.unidad_medida }})
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label"><b>Cantidad Estimada:</b></label>
+                                <input type="number" step="0.01" min="0.01" class="form-control" id="input_estimada" name="cantidad_estimada" value="{{ detalle_insumo.cantidad_estimada|default:0 }}" required>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label"><b>Cantidad Utilizada:</b></label>
+                                <input type="number" step="0.01" min="0.01" class="form-control" id="input_utilizada" name="cantidad_utilizada" value="{{ detalle_insumo.cantidad_utilizada|default:0 }}" required>
+                            </div>
+                        </div>
+
+                        <hr class="my-4">
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label"><b>Cant. Programada:</b></label>
+                                <input type="number" min="1" class="form-control" name="cantidad_programada" value="{{ orden.cantidad_programada }}" required>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label"><b>Cant. Producida:</b></label>
+                                <input type="number" min="0" class="form-control" name="cantidad_producida" value="{{ orden.cantidad_producida }}" required>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label"><b>Estado:</b></label>
+                                <select class="form-select" name="estado">
+                                    <option value="Pendiente" {% if orden.estado == 'Pendiente' %}selected{% endif %}>Pendiente</option>
+                                    <option value="En Proceso" {% if orden.estado == 'En Proceso' %}selected{% endif %}>En Proceso</option>
+                                    <option value="Pausada" {% if orden.estado == 'Pausada' %}selected{% endif %}>Pausada</option>
+                                    <option value="Finalizada" {% if orden.estado == 'Finalizada' %}selected{% endif %}>Finalizada</option>
+                                    <option value="Cancelada" {% if orden.estado == 'Cancelada' %}selected{% endif %}>Cancelada</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{% url 'listado_ordenes' %}" class="btn btn-outline-secondary">Cancelar</a>
+                            <button type="submit" class="btn btn-warning">Actualizar Lote</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+$(document).ready(function() {
+    $("#frm_editar_orden").validate({
+        rules: {
+            codigo_lote: { required: true },
+            producto: { required: true },
+            cantidad_programada: { required: true, min: 1 },
+            cantidad_producida: { required: true, min: 0 }
+        }
+    });
+
+    function actualizarReglasStock() {
+        let opcionSeleccionada = $('#select_insumo').find(':selected');
+        let stockDisponible = parseFloat(opcionSeleccionada.data('stock')) || 0;
+        let unidad = opcionSeleccionada.data('unidad') || '';
+
+        if ($('#select_insumo').val() !== '') {
+            $('#badge_stock_info').removeClass('d-none');
+            $('#lbl_stock').text(`${stockDisponible} ${unidad}`);
+
+            $('#input_estimada').rules('add', {
+                max: stockDisponible,
+                messages: { max: `Excede el stock disponible (${stockDisponible} ${unidad})` }
+            });
+
+            $('#input_utilizada').rules('add', {
+                max: stockDisponible,
+                messages: { max: `Excede el stock disponible (${stockDisponible} ${unidad})` }
+            });
+        }
+    }
+
+    actualizarReglasStock();
+    $('#select_insumo').on('change', actualizarReglasStock);
+});
+</script>
+{% endblock %}

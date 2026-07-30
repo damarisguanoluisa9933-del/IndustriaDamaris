@@ -1,0 +1,149 @@
+{% extends '../plantilla.html' %}
+{% block contenido %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow border-0">
+                <div class="card-header bg-warning text-dark">
+                    <h4 class="mb-0">Editar Línea de Ensamblaje</h4>
+                </div>
+                <div class="card-body">
+                    <form id="frm_editar_linea" action="{% url 'editar_linea' linea.id %}" method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        <!-- Nombre de la Línea -->
+                        <div class="mb-3">
+                            <label class="form-label" for="nombre"><b>Nombre de la Línea:</b></label>
+                            <input type="text" class="form-control" id="nombre" name="nombre" value="{{ linea.nombre }}" required>
+                        </div>
+                        
+                        <!-- Código Identificador -->
+                        <div class="mb-3">
+                            <label class="form-label" for="codigo"><b>Código Identificador:</b></label>
+                            <input type="text" class="form-control" id="codigo" name="codigo" value="{{ linea.codigo }}" required>
+                        </div>
+                        
+                        <!-- Descripción -->
+                        <div class="mb-3">
+                            <label class="form-label" for="descripcion"><b>Descripción:</b></label>
+                            <textarea class="form-control" id="descripcion" name="descripcion" rows="3">{{ linea.descripcion }}</textarea>
+                        </div>
+                        
+                        <!-- Imagen Actual / Reemplazar -->
+                        <div class="mb-3">
+                            <label class="form-label" for="foto_linea"><b>Imagen Actual / Reemplazar:</b></label>
+                            <input type="file" id="foto_linea" class="form-control" name="foto" accept="image/jpeg,image/png,image/gif,image/webp">
+                            <div id="error-foto"></div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{% url 'listado_lineas' %}" class="btn btn-outline-secondary">Cancelar</a>
+                            <button type="submit" id="btn_guardar" class="btn btn-warning">Actualizar Línea</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Scripts de soporte para jQuery Validate (extensión de imágenes) -->
+<script src="https://cdn.jsdelivr.net/npm/jquery-validation@1.19.5/dist/additional-methods.min.js"></script>
+
+<script>
+$(document).ready(function() {
+
+    // 1. REGLAS PERSONALIZADAS DE SEGURIDAD
+    $.validator.addMethod("nombreValido", function(value, element) {
+        return this.optional(element) || /^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s\-\(\)]+$/.test($.trim(value));
+    }, "No se permiten caracteres especiales como {}, <>, $, etc.");
+
+    $.validator.addMethod("codigoValido", function(value, element) {
+        return this.optional(element) || /^[a-zA-Z0-9\-_]+$/.test($.trim(value));
+    }, "El código solo puede contener letras, números y guiones (- _).");
+
+    // 2. CONFIGURACIÓN DEL PLUGIN DE IMAGEN
+    $("#foto_linea").fileinput({
+        language: 'es', 
+        showUpload: false, 
+        dropZoneEnabled: true, 
+        maxFileCount: 1,
+        allowedFileTypes: ['image'],
+        allowedFileExtensions: ['jpg', 'jpeg', 'png', 'gif', 'webp'],
+        {% if linea.foto %}
+        initialPreview: ["<img src='{{ linea.foto.url }}' class='kv-preview-data file-preview-image' style='max-width:100%;'>"],
+        initialPreviewAsData: false,
+        {% endif %}
+    });
+
+    $("#foto_linea").on('fileloaded filecleared fileselecterror', function() {
+        $(this).valid();
+    });
+
+    // 3. VALIDACIÓN ESTRICTA DEL FORMULARIO
+    $("#frm_editar_linea").validate({
+        // Fuerza la validación de campos ocultos o modificados por plugins
+        ignore: [],
+        rules: { 
+            nombre: { 
+                required: true,
+                minlength: 3,
+                maxlength: 100,
+                nombreValido: true
+            }, 
+            codigo: { 
+                required: true,
+                minlength: 2,
+                maxlength: 20,
+                codigoValido: true
+            },
+            descripcion: {
+                maxlength: 500
+            },
+            foto: {
+                required: false,
+                extension: "jpg|jpeg|png|gif|webp"
+            }
+        },
+        messages: {
+            nombre: {
+                required: "Por favor, ingrese el nombre de la línea.",
+                minlength: "El nombre debe tener al menos 3 caracteres.",
+                maxlength: "El nombre no puede superar los 100 caracteres."
+            },
+            codigo: {
+                required: "Por favor, ingrese el código identificador.",
+                minlength: "El código debe tener al menos 2 caracteres.",
+                maxlength: "El código no puede superar los 20 caracteres."
+            },
+            descripcion: {
+                maxlength: "La descripción no puede superar los 500 caracteres."
+            },
+            foto: {
+                extension: "Formato no permitido. Ingrese únicamente un archivo de imagen (.jpg, .png, .gif, .webp)."
+            }
+        },
+        errorElement: 'label',
+        errorClass: 'error text-danger fw-bold mt-1 d-block',
+        
+        highlight: function(element) {
+            $(element).addClass('is-invalid error').removeClass('is-valid');
+        },
+        unhighlight: function(element) {
+            $(element).removeClass('is-invalid error').addClass('is-valid');
+        },
+        errorPlacement: function(error, element) {
+            if (element.attr("name") === "foto") {
+                error.appendTo("#error-foto");
+            } else {
+                error.insertAfter(element);
+            }
+        },
+        // BLOQUEO ABSOLUTO: Solo si el formulario es 100% válido se envía al servidor Django
+        submitHandler: function(form) {
+            form.submit();
+        }
+    });
+});
+</script>
+{% endblock %}

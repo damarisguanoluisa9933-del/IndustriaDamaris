@@ -1,0 +1,122 @@
+{% extends './plantilla.html' %}
+{% load static %}
+
+{% block contenido %}
+<div class="container py-3">
+
+    <!-- Banner de Bienvenida -->
+    <div class="p-4 p-md-5 mb-4 rounded text-white bg-primary shadow-sm position-relative overflow-hidden">
+        <div class="col-md-8 position-relative z-1">
+            <h1 class="display-5 fw-bold text-uppercase mb-2">
+                <i class="bi bi-gear-wide-connected me-2"></i>Industria Damaris
+            </h1>
+            <p class="lead my-3">
+                Sistema Integral de Control de Producción Industrial, Monitoreo de Maquinaria y Gestión de Lotes en Tiempo Real.
+            </p>
+            <div class="d-flex flex-wrap gap-2 pt-2">
+                <a href="{% url 'dashboard' %}" class="btn btn-light btn-lg fw-bold text-primary">
+                    <i class="bi bi-speedometer2 me-1"></i> Ir al Dashboard OEE
+                </a>
+                <a href="{% url 'listado_ordenes' %}" class="btn btn-outline-light btn-lg">
+                    <i class="bi bi-card-checklist me-1"></i> Ver Órdenes de Fabricación
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- ¿De qué trata el sistema? -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-12">
+            <div class="card border-0 shadow-sm p-4 bg-white">
+                <h3 class="text-primary fw-bold mb-3">
+                    <i class="bi bi-info-circle-fill me-2"></i>¿De qué trata este programa?
+                </h3>
+                <p class="text-secondary fs-5">
+                    Este software está diseñado para digitalizar y optimizar la operación de planta de <b>Industria Damaris</b>. Permite a los supervisores y administradores gestionar de forma centralizada la cola de producción, monitorear la salud operativa de las maquinarias, reducir tiempos muertos y auditar mermas de materia prima por lote fabricado.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Módulos Principales -->
+    <h4 class="fw-bold text-dark mb-3"><i class="bi bi-grid-fill me-2 text-primary"></i>Módulos de la Planta</h4>
+    <div class="row g-4 mb-5">
+        
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm h-100 bg-white">
+                <div class="card-body text-center p-4">
+                    <div class="rounded-circle bg-primary bg-opacity-10 text-primary d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
+                        <i class="bi bi-diagram-3-fill fs-3"></i>
+                    </div>
+                    <h5 class="fw-bold">Líneas y Maquinaria</h5>
+                    <p class="text-muted small">Control de la infraestructura de ensamblaje, horas acumuladas de uso y estado operativo en tiempo real.</p>
+                    <a href="{% url 'listado_maquinarias' %}" class="btn btn-sm btn-outline-primary">Ver Maquinaria</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm h-100 bg-white">
+                <div class="card-body text-center p-4">
+                    <div class="rounded-circle bg-success bg-opacity-10 text-success d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
+                        <i class="bi bi-card-checklist fs-3"></i>
+                    </div>
+                    <h5 class="fw-bold">Cola de Fabricación</h5>
+                    <p class="text-muted small">Programación temporal de lotes de producción, asignación de operarios y ordenamiento priorizado.</p>
+                    <a href="{% url 'listado_ordenes' %}" class="btn btn-sm btn-outline-success">Ver Lotes</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm h-100 bg-white">
+                <div class="card-body text-center p-4">
+                    <div class="rounded-circle bg-warning bg-opacity-10 text-warning d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
+                        <i class="bi bi-box-seam fs-3"></i>
+                    </div>
+                    <h5 class="fw-bold">Insumos y Mermas</h5>
+                    <p class="text-muted small">Inventario de materia prima, balance entre consumo teórico vs. real y auditoría de desperdicio por lote.</p>
+                    <a href="{% url 'listado_insumos' %}" class="btn btn-sm btn-outline-warning">Ver Materia Prima</a>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Funcionalidades Clave del Tablero Interactivo -->
+    <div class="card border-0 shadow-sm p-4 bg-white mb-4">
+        <h4 class="fw-bold text-dark mb-3"><i class="bi bi-tools me-2 text-primary"></i>Herramientas Interactivas del Tablero</h4>
+        <div class="row g-3">
+            <div class="col-md-3 col-6">
+                <div class="p-3 border rounded text-center">
+                    <i class="bi bi-calendar-week fs-2 text-primary"></i>
+                    <h6 class="fw-bold mt-2 mb-1">FullCalendar</h6>
+                    <span class="text-muted small">Gantt de Lotes</span>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="p-3 border rounded text-center">
+                    <i class="bi bi-hand-index-thumb fs-2 text-info"></i>
+                    <h6 class="fw-bold mt-2 mb-1">jQuery UI</h6>
+                    <span class="text-muted small">Drag & Drop Lotes</span>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="p-3 border rounded text-center">
+                    <i class="bi bi-keyboard fs-2 text-warning"></i>
+                    <h6 class="fw-bold mt-2 mb-1">Hotkeys-js</h6>
+                    <span class="text-muted small">Atajos Shift+1 a Shift+5</span>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="p-3 border rounded text-center">
+                    <i class="bi bi-compass fs-2 text-success"></i>
+                    <h6 class="fw-bold mt-2 mb-1">Driver.js</h6>
+                    <span class="text-muted small">Tour de Inducción</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

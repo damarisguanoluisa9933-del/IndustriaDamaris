@@ -1,0 +1,63 @@
+{% extends '../plantilla.html' %}
+{% load static %}
+{% block contenido %}
+<div class="container bg-white p-4 rounded shadow-sm border">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="text-uppercase text-primary"><i class="bi bi-people-fill me-2"></i>Operarios de Planta</h2>
+        <a href="{% url 'nuevo_operario' %}" class="btn btn-primary"><i class="bi bi-plus-circle me-1"></i>Nuevo Operario</a>
+    </div>
+    <hr>
+    <div class="table-responsive">
+        <table id="tbl_operarios" class="table table-hover align-middle w-100">
+            <thead>
+                <tr>
+                    <th class="text-center">FOTO</th>
+                    <th class="text-center">CÉDULA</th>
+                    <th>NOMBRES Y APELLIDOS</th>
+                    <th>TELÉFONO</th>
+                    <th>CORREO</th>
+                    <th class="text-center">ACCIONES</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for operario in operarios %}
+                <tr>
+                    <td class="text-center">
+                        {% if operario.foto %}
+                            <img src="{{ operario.foto.url }}" class="rounded-circle" width="45" height="45" style="object-fit: cover;">
+                        {% else %}
+                            <i class="bi bi-person-fill fs-2 text-secondary"></i>
+                        {% endif %}
+                    </td>
+                    <td class="text-center"><b>{{ operario.cedula }}</b></td>
+                    <td><b>{{ operario.nombres }} {{ operario.apellidos }}</b></td>
+                    <td>{{ operario.telefono }}</td>
+                    <td>{{ operario.correo|default:"Sin Correo" }}</td>
+                    <td class="text-center">
+                        <a href="{% url 'editar_operario' operario.id %}" class="btn btn-sm btn-outline-warning"><i class="bi bi-pencil-square"></i></a>
+                        <a href="{% url 'eliminar_operario' operario.id %}" class="btn btn-sm btn-danger" onclick="confirmarEliminacion(event, this.href)"><i class="bi bi-trash"></i></a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+$(document).ready(function() {
+    $('#tbl_operarios').DataTable({
+        destroy: true,
+        dom: 'Bfrtip',
+        buttons: [
+            { extend: 'excelHtml5', text: '<i class="bi bi-file-earmark-excel me-1"></i> Exportar a Excel', className: 'btn btn-success btn-sm mb-3' },
+            { extend: 'pdfHtml5', text: '<i class="bi bi-file-earmark-pdf me-1"></i> Exportar a PDF', className: 'btn btn-danger btn-sm mb-3' },
+            { extend: 'print', text: '<i class="bi bi-printer me-1"></i> Imprimir Reporte', className: 'btn btn-dark btn-sm mb-3' }
+        ],
+        language: {
+            url: 'https://cdn.datatables.net/plug-ins/1.13.8/i18n/es-ES.json'
+        }
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,175 @@
+{% extends '../plantilla.html' %}
+{% load static %}
+
+{% block contenido %}
+<div class="container-fluid py-3">
+    <!-- Encabezado del Módulo -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="text-uppercase text-primary fw-bold mb-0">
+                <i class="bi bi-cpu-fill me-2"></i>Monitoreo y Control de Maquinaria
+            </h2>
+            <p class="text-muted small mb-0">
+                <b>Atajos de Teclado:</b> Haz clic en una tarjeta para seleccionarla y presiona 
+                <span class="badge bg-dark">Shift+1</span> (Operativa), 
+                <span class="badge bg-dark">Shift+2</span> (Mantenimiento), 
+                <span class="badge bg-dark">Shift+3</span> (Detenida), 
+                <span class="badge bg-dark">Shift+4</span> (Falla), 
+                <span class="badge bg-dark">Shift+5</span> (Inactiva).
+            </p>
+        </div>
+        <a href="{% url 'nueva_maquinaria' %}" class="btn btn-primary shadow-sm">
+            <i class="bi bi-plus-circle me-1"></i>Nueva Máquina
+        </a>
+    </div>
+
+    <!-- Indicador visual de máquina seleccionada -->
+    <div id="alerta-maquina-activa" class="alert alert-warning d-none align-items-center justify-content-between shadow-sm mb-4" role="alert">
+        <div>
+            <i class="bi bi-cursor-fill me-2 fs-5"></i>
+            <strong>Máquina activa para atajos:</strong> <span id="nombre-maquina-activa" class="fw-bold text-uppercase"></span>
+        </div>
+        <span class="badge bg-dark">Usa Shift + 1..5 para cambiar estado</span>
+    </div>
+
+    <!-- Tarjetas de Maquinaria -->
+    <div class="row g-4" id="contenedor-tarjetas">
+        {% for maquina in maquinarias %}
+        <div class="col-md-6 col-lg-4">
+            <div class="card card-maquina h-100 border-2 shadow-sm p-3" 
+                 data-id="{{ maquina.id }}" 
+                 data-nombre="{{ maquina.nombre }}"
+                 id="tarjeta-{{ maquina.id }}" 
+                 style="cursor: pointer; transition: all 0.2s ease-in-out;">
+                
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h5 class="fw-bold text-dark mb-0">{{ maquina.nombre }}</h5>
+                    <span class="badge 
+                        {% if maquina.estado == 'Operativa' %}bg-success
+                        {% elif maquina.estado == 'En Mantenimiento' %}bg-warning text-dark
+                        {% elif maquina.estado == 'Detenida' %}bg-info text-dark
+                        {% elif maquina.estado == 'Falla' %}bg-danger
+                        {% else %}bg-secondary{% endif %} p-2" 
+                        id="badge-{{ maquina.id }}">
+                        {{ maquina.estado }}
+                    </span>
+                </div>
+
+                <p class="small text-muted mb-1"><b>Código:</b> {{ maquina.codigo_inventario }}</p>
+                <p class="small text-muted mb-1"><b>Línea:</b> {{ maquina.linea.nombre }}</p>
+                <p class="small text-muted mb-3"><b>Horas de Uso:</b> {{ maquina.horas_uso }} hrs</p>
+                
+                <div class="d-flex justify-content-end gap-1">
+                    <a href="{% url 'editar_maquinaria' maquina.id %}" class="btn btn-sm btn-outline-warning"><i class="bi bi-pencil-square"></i></a>
+                    <a href="{% url 'eliminar_maquinaria' maquina.id %}" class="btn btn-sm btn-danger" onclick="confirmarEliminacion(event, this.href)"><i class="bi bi-trash"></i></a>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="alert alert-info text-center">No hay máquinas registradas en la planta.</div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Guardamos globalmente el ID de la máquina seleccionada por el usuario
+let idMaquinaSeleccionada = null;
+
+$(document).ready(function() {
+
+    // 1. Al hacer clic en una tarjeta, se resalta y queda activa para recibir el atajo
+    $('.card-maquina').on('click', function() {
+        // Quitamos la marca azul a las demás tarjetas
+        $('.card-maquina').removeClass('border-primary bg-light shadow-lg').addClass('border-2');
+        
+        // Resaltamos la tarjeta actual
+        $(this).addClass('border-primary bg-light shadow-lg');
+        
+        idMaquinaSeleccionada = $(this).data('id');
+        let nombreMaquina = $(this).data('nombre');
+
+        // Mostramos el banner informativo
+        $('#nombre-maquina-activa').text(nombreMaquina);
+        $('#alerta-maquina-activa').removeClass('d-none').addClass('d-flex');
+
+        // Notificación Toast rápida arriba a la derecha
+        Swal.fire({
+            toast: true,
+            position: 'top-end',
+            icon: 'info',
+            title: `Máquina "${nombreMaquina}" lista. Presiona Shift + 1 al 5`,
+            showConfirmButton: false,
+            timer: 2000
+        });
+    });
+
+    // 2. CAPTURA DIRECTA DEL TECLADO NATIVO (Garantiza compatibilidad en Linux/Fedora)
+    $(document).on('keydown', function(e) {
+        // Verificamos que Shift esté presionado y que tengamos una máquina seleccionada
+        if (e.shiftKey && idMaquinaSeleccionada) {
+            let nuevoEstado = '';
+
+            // Mapeo de teclas numéricas (1, 2, 3, 4, 5)
+            if (e.key === '1' || e.keyCode === 49) nuevoEstado = 'Operativa';
+            else if (e.key === '2' || e.keyCode === 50) nuevoEstado = 'En Mantenimiento';
+            else if (e.key === '3' || e.keyCode === 51) nuevoEstado = 'Detenida';
+            else if (e.key === '4' || e.keyCode === 52) nuevoEstado = 'Falla';
+            else if (e.key === '5' || e.keyCode === 53) nuevoEstado = 'Inactiva';
+
+            if (nuevoEstado !== '') {
+                e.preventDefault(); // Evitamos acciones por defecto del navegador
+                enviarCambioEstado(idMaquinaSeleccionada, nuevoEstado);
+            }
+        }
+    });
+
+    // 3. Función AJAX para enviar los datos a Django
+    function enviarCambioEstado(maquinaId, estado) {
+        $.ajax({
+            url: "{% url 'cambiar_estado_hotkey' %}",
+            type: "POST",
+            data: {
+                'maquina_id': maquinaId,
+                'nuevo_estado': estado,
+                'csrfmiddlewaretoken': '{{ csrf_token }}'
+            },
+            success: function(res) {
+                if (res.status === 'ok') {
+                    let badge = $(`#badge-${maquinaId}`);
+                    badge.text(res.estado);
+
+                    // Cambiamos el color de la etiqueta dinámicamente
+                    badge.removeClass('bg-success bg-warning bg-danger bg-secondary bg-info text-dark');
+                    if (res.estado === 'Operativa') badge.addClass('bg-success');
+                    else if (res.estado === 'En Mantenimiento') badge.addClass('bg-warning text-dark');
+                    else if (res.estado === 'Detenida') badge.addClass('bg-info text-dark');
+                    else if (res.estado === 'Falla') badge.addClass('bg-danger');
+                    else badge.addClass('bg-secondary');
+
+                    // Alerta Toast de confirmación
+                    Swal.fire({
+                        toast: true,
+                        position: 'top-end',
+                        icon: 'success',
+                        title: `Estado de la máquina cambiado a: ${res.estado}`,
+                        showConfirmButton: false,
+                        timer: 2000
+                    });
+                }
+            },
+            error: function(err) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error de actualización',
+                    text: 'No se pudo registrar el cambio de estado.'
+                });
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

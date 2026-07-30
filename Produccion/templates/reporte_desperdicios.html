@@ -1,0 +1,89 @@
+{% extends './plantilla.html' %}
+{% load static %}
+
+{% block contenido %}
+<div class="container-fluid py-3">
+
+    <!-- Encabezado del Reporte -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="p-3 rounded border bg-white shadow-sm d-flex justify-content-between align-items-center" style="border-left: 5px solid #dc3545 !important;">
+                <div>
+                    <h2 class="mb-0 text-uppercase fw-bold text-danger">
+                        <i class="bi bi-trash-fill me-2"></i>Reporte de Desperdicio de Materia Prima
+                    </h2>
+                    <p class="text-muted mb-0 small">Auditoría de consumo teórico vs. real y merma de insumos por lote de producción</p>
+                </div>
+                <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-arrow-left me-1"></i> Volver al Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla Principal con DataTables -->
+    <div class="card border-0 shadow-sm bg-white p-4">
+        <div class="table-responsive">
+            <table id="tbl_desperdicios" class="table table-hover align-middle w-100">
+                <thead class="table-dark">
+                    <tr>
+                        <th class="text-center">CÓDIGO LOTE</th>
+                        <th>PRODUCTO / ORDEN</th>
+                        <th>INSUMO / MATERIA PRIMA</th>
+                        <th class="text-center">CANT. ESTIMADA</th>
+                        <th class="text-center">CANT. UTILIZADA</th>
+                        <th class="text-center">DESPERDICIO / MERMA</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for detalle in detalles %}
+                    <tr>
+                        <td class="text-center">
+                            <span class="badge bg-secondary p-2">{{ detalle.orden.codigo_lote }}</span>
+                        </td>
+                        <td><b>{{ detalle.orden.producto }}</b></td>
+                        <td>
+                            <i class="bi bi-box-seam me-1 text-primary"></i>
+                            <b>{{ detalle.insumo.nombre }}</b> 
+                            <small class="text-muted">({{ detalle.insumo.unidad_medida }})</small>
+                        </td>
+                        <td class="text-center">{{ detalle.cantidad_estimada }} {{ detalle.insumo.unidad_medida }}</td>
+                        <td class="text-center">{{ detalle.cantidad_utilizada }} {{ detalle.insumo.unidad_medida }}</td>
+                        <td class="text-center">
+                            {% if detalle.cantidad_desperdicio > 0 %}
+                                <span class="badge bg-danger p-2">
+                                    <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                                    {{ detalle.cantidad_desperdicio }} {{ detalle.insumo.unidad_medida }}
+                                </span>
+                            {% else %}
+                                <span class="badge bg-success p-2">
+                                    <i class="bi bi-check-circle-fill me-1"></i> Sin Desperdicio
+                                </span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<!-- Configuración de DataTables para Exportación -->
+<script>
+$(document).ready(function() {
+    $('#tbl_desperdicios').DataTable({
+        dom: 'Bfrtip',
+        buttons: [
+            { extend: 'excelHtml5', text: '<i class="bi bi-file-earmark-excel me-1"></i> Exportar a Excel', className: 'btn btn-success btn-sm mb-3' },
+            { extend: 'pdfHtml5', text: '<i class="bi bi-file-earmark-pdf me-1"></i> Exportar a PDF', className: 'btn btn-danger btn-sm mb-3' },
+            { extend: 'print', text: '<i class="bi bi-printer me-1"></i> Imprimir Reporte', className: 'btn btn-dark btn-sm mb-3' }
+        ],
+        language: {
+            url: 'https://cdn.datatables.net/plug-ins/1.13.8/i18n/es-ES.json'
+        }
+    });
+});
+</script>
+{% endblock %}

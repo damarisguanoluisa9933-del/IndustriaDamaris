@@ -1,0 +1,177 @@
+{% extends '../plantilla.html' %}
+{% block contenido %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="card shadow border-0">
+                <div class="card-header bg-primary text-white"><h4 class="mb-0"><i class="bi bi-plus-circle me-2"></i>Registrar Órden de Fabricación</h4></div>
+                <div class="card-body">
+                    <form id="frm_orden" action="{% url 'nueva_orden' %}" method="post">
+                        {% csrf_token %}
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label"><b>Código de Lote:</b></label>
+                                <input type="text" class="form-control" name="codigo_lote" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label"><b>Producto a Fabricar:</b></label>
+                                <input type="text" class="form-control" name="producto" required>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label"><b>Línea:</b></label>
+                                <select class="form-select" name="linea_id" required>
+                                    <option value="">-- Seleccione Línea --</option>
+                                    {% for linea in lineas %}
+                                        <option value="{{ linea.id }}">{{ linea.nombre }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label"><b>Máquina Asignada:</b></label>
+                                <select class="form-select" name="maquina_id">
+                                    <option value="">-- Seleccione Máquina --</option>
+                                    {% for maquina in maquinas %}
+                                        <option value="{{ maquina.id }}">{{ maquina.nombre }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label"><b>Supervisor Encargado:</b></label>
+                                {% if not user.is_superuser and supervisor_logueado %}
+                                    <input type="text" class="form-control" value="{{ supervisor_logueado.nombre }} {{ supervisor_logueado.apellido }}" readonly>
+                                    <input type="hidden" name="supervisor_id" value="{{ supervisor_logueado.id }}">
+                                {% else %}
+                                    <select class="form-select" name="supervisor_id" required>
+                                        <option value="">-- Seleccione Supervisor --</option>
+                                        {% for supervisor in supervisores %}
+                                            <option value="{{ supervisor.id }}">{{ supervisor.nombre }} {{ supervisor.apellido }}</option>
+                                        {% endfor %}
+                                    </select>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label"><b>Operario Principal:</b></label>
+                                <select class="form-select" name="operario_id">
+                                    <option value="">-- Seleccione Operario --</option>
+                                    {% for operario in operarios %}
+                                        <option value="{{ operario.id }}">{{ operario.nombres }} {{ operario.apellidos }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- SECCIÓN DE MATERIA PRIMA CON STOCK DINÁMICO -->
+                        <hr class="my-4">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="text-primary fw-bold mb-0"><i class="bi bi-box-seam me-2"></i>Materia Prima e Insumos</h5>
+                            <span id="badge_stock_info" class="badge bg-secondary p-2 d-none">Stock Disponible: <b id="lbl_stock">0</b></span>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label"><b>Seleccionar Insumo:</b></label>
+                                <select class="form-select" id="select_insumo" name="insumo_id" required>
+                                    <option value="" data-stock="0">-- Seleccione Insumo --</option>
+                                    {% for insumo in insumos %}
+                                        <option value="{{ insumo.id }}" data-stock="{{ insumo.stock_disponible }}" data-unidad="{{ insumo.unidad_medida }}">
+                                            {{ insumo.nombre }} (Stock: {{ insumo.stock_disponible }} {{ insumo.unidad_medida }})
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label"><b>Cantidad Estimada:</b></label>
+                                <input type="number" step="0.01" min="0.01" class="form-control" id="input_estimada" name="cantidad_estimada" placeholder="Ej: 100" required>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label"><b>Cantidad Utilizada:</b></label>
+                                <input type="number" step="0.01" min="0.01" class="form-control" id="input_utilizada" name="cantidad_utilizada" placeholder="Ej: 105" required>
+                            </div>
+                        </div>
+
+                        <hr class="my-4">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label"><b>Cantidad Programada (Unidades):</b></label>
+                                <input type="number" min="1" class="form-control" name="cantidad_programada" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label"><b>Estado:</b></label>
+                                <select class="form-select" name="estado">
+                                    <option value="Pendiente" selected>Pendiente</option>
+                                    <option value="En Proceso">En Proceso</option>
+                                    <option value="Pausada">Pausada</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label"><b>Fecha/Hora Inicio:</b></label>
+                                <input type="datetime-local" class="form-control" name="fecha_inicio_programada" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label"><b>Fecha/Hora Estimada Fin:</b></label>
+                                <input type="datetime-local" class="form-control" name="fecha_fin_programada" required>
+                            </div>
+                        </div>
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{% url 'listado_ordenes' %}" class="btn btn-outline-secondary">Cancelar</a>
+                            <button type="submit" class="btn btn-primary">Guardar Lote</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+$(document).ready(function() {
+
+    let validator = $("#frm_orden").validate({
+        rules: {
+            codigo_lote: { required: true },
+            producto: { required: true },
+            linea_id: { required: true },
+            insumo_id: { required: true },
+            cantidad_estimada: { required: true, min: 0.01 },
+            cantidad_utilizada: { required: true, min: 0.01 },
+            cantidad_programada: { required: true, min: 1 },
+            fecha_inicio_programada: { required: true },
+            fecha_fin_programada: { required: true }
+        }
+    });
+
+    // Evento al cambiar la materia prima elegida
+    $('#select_insumo').on('change', function() {
+        let opcionSeleccionada = $(this).find(':selected');
+        let stockDisponible = parseFloat(opcionSeleccionada.data('stock')) || 0;
+        let unidad = opcionSeleccionada.data('unidad') || '';
+
+        if ($(this).val() !== '') {
+            $('#badge_stock_info').removeClass('d-none');
+            $('#lbl_stock').text(`${stockDisponible} ${unidad}`);
+
+            // Aplicar regla de máximo stock en jQuery Validation
+            $('#input_estimada').rules('add', {
+                max: stockDisponible,
+                messages: { max: `La cantidad estimada no puede superar el stock disponible (${stockDisponible} ${unidad})` }
+            });
+
+            $('#input_utilizada').rules('add', {
+                max: stockDisponible,
+                messages: { max: `La cantidad utilizada supera el stock disponible en bodega (${stockDisponible} ${unidad})` }
+            });
+        } else {
+            $('#badge_stock_info').addClass('d-none');
+            $('#input_estimada').rules('remove', 'max');
+            $('#input_utilizada').rules('remove', 'max');
+        }
+    });
+});
+</script>
+{% endblock %}

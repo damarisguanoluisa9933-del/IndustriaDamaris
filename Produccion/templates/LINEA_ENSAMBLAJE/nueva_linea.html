@@ -1,0 +1,158 @@
+{% extends '../plantilla.html' %}
+{% block contenido %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow border-0">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Registrar Línea de Ensamblaje</h4>
+                </div>
+                <div class="card-body">
+                    <!-- Formulario de registro: 'enctype' es obligatorio porque enviamos la foto a Django -->
+                    <form id="frm_linea" action="{% url 'nueva_linea' %}" method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        <!-- Campo 1: Nombre de la Línea -->
+                        <div class="mb-3">
+                            <label class="form-label" for="nombre"><b>Nombre de la Línea:</b></label>
+                            <input type="text" class="form-control" id="nombre" name="nombre" placeholder="Ej: Línea 1 - Embotellado y Empaque Primario" required>
+                        </div>
+                        
+                        <!-- Campo 2: Código Identificador (Validamos en el backend que no esté repetido) -->
+                        <div class="mb-3">
+                            <label class="form-label" for="codigo"><b>Código Identificador:</b></label>
+                            <input type="text" class="form-control" id="codigo" name="codigo" placeholder="Ej: LNE-ENV-01" required>
+                        </div>
+                        
+                        <!-- Campo 3: Descripción detallada -->
+                        <div class="mb-3">
+                            <label class="form-label" for="descripcion"><b>Descripción:</b></label>
+                            <textarea class="form-control" id="descripcion" name="descripcion" rows="3" placeholder="Ej: Línea automatizada para llenado, tapado y etiquetado de líquidos en presentaciones de 500ml. Capacidad nominal: 1200 unidades/hora."></textarea>
+                        </div>
+                        
+                        <!-- Campo 4: Foto de la Línea de Ensamblaje -->
+                        <div class="mb-3">
+                            <label class="form-label" for="foto_linea"><b>Imagen de la Línea:</b></label>
+                            <input type="file" id="foto_linea" class="form-control" name="foto" accept="image/jpeg,image/png,image/gif,image/webp">
+                            <!-- Aquí se dibuja el texto de error si se olvidan de la foto o suben un archivo raro -->
+                            <div id="error-foto"></div>
+                        </div>
+                        
+                        <!-- Botones de navegación -->
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{% url 'listado_lineas' %}" class="btn btn-outline-secondary">Cancelar</a>
+                            <button type="submit" class="btn btn-primary">Guardar Línea</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+$(document).ready(function() {
+
+    // 1. REGLAS PERSONALIZADAS CON EXPRESIONES REGULARES (REGEX)
+    // Sirven para bloquear caracteres peligrosos ({}, <>, $, etc.) y evitar inyecciones de código.
+
+    // Método para Nombre: Solo deja pasar letras (con tildes y ñ), números, espacios, guiones y paréntesis
+    $.validator.addMethod("nombreValido", function(value, element) {
+        return this.optional(element) || /^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s\-\(\)]+$/.test(value);
+    }, "No se permiten caracteres especiales como {}, <>, $, etc.");
+
+    // Método para Código: Solo permite letras, números, guiones y guion bajo (sin espacios raros)
+    $.validator.addMethod("codigoValido", function(value, element) {
+        return this.optional(element) || /^[a-zA-Z0-9\-_]+$/.test(value);
+    }, "El código solo puede contener letras, números y guiones (- _).");
+
+
+    // 2. CONFIGURACIÓN DEL PLUGIN DE FOTOS (BOOTSTRAP FILEINPUT)
+    // Le da estilo bonito al botón de cargar archivos con vista previa.
+    $("#foto_linea").fileinput({ 
+        language: 'es', 
+        showUpload: false, // No muestra botón de subida independiente porque sube todo el formulario junto
+        dropZoneEnabled: true, // Permite arrastrar la foto desde la carpeta directamente a la pantalla
+        maxFileCount: 1, // Solo deja subir 1 imagen a la vez
+        allowedFileTypes: ['image'],
+        allowedFileExtensions: ['jpg', 'jpeg', 'png', 'gif', 'webp']
+    });
+
+    // Evento para revalidar el campo cuando cambian o borran la foto cargada
+    $("#foto_linea").on('fileloaded filecleared fileselecterror', function() {
+        $(this).valid();
+    });
+
+
+    // 3. VALIDACIÓN DEL FORMULARIO EN TIEMPO REAL CON JQUERY VALIDATE
+    $("#frm_linea").validate({
+        // Reglas que debe cumplir cada campo antes de enviar el formulario
+        rules: { 
+            nombre: { 
+                required: true, 
+                minlength: 3,
+                maxlength: 100,
+                nombreValido: true // Activa nuestro filtro de letras/números
+            }, 
+            codigo: { 
+                required: true,
+                minlength: 2,
+                maxlength: 50, // Lo dejamos en 50 para que coincida exactamente con el max_length=50 del models.py
+                codigoValido: true // Activa nuestro filtro sin espacios ni símbolos
+            },
+            descripcion: {
+                maxlength: 500
+            },
+            foto: {
+                required: true, // Estricto: obliga al usuario a subir una foto
+                extension: "jpg|jpeg|png|gif|webp" // Estricto: frena PDFs, Word o archivos ejecutables (.exe)
+            }
+        },
+        
+        // Mensajes personalizados en español que ve el usuario si comete un error
+        messages: { 
+            nombre: { 
+                required: "Por favor, ingrese el nombre de la línea.",
+                minlength: "El nombre debe tener al menos 3 caracteres.",
+                maxlength: "El nombre no puede superar los 100 caracteres."
+            }, 
+            codigo: { 
+                required: "Por favor, ingrese el código identificador.",
+                minlength: "El código debe tener al menos 2 caracteres.",
+                maxlength: "El código no puede superar los 50 caracteres."
+            },
+            descripcion: {
+                maxlength: "La descripción no puede superar los 500 caracteres."
+            },
+            foto: {
+                required: "La foto de la línea de ensamblaje es obligatoria.",
+                extension: "Formato no permitido. Ingrese únicamente un archivo de imagen (.jpg, .png, etc.)."
+            }
+        },
+
+        // Marcamos los errores con texto rojo y negrita debajo del input
+        errorElement: 'label',
+        errorClass: 'error text-danger fw-bold mt-1 d-block',
+        
+        // Si hay error le pone el marco rojo al input
+        highlight: function(element) {
+            $(element).addClass('is-invalid error').removeClass('is-valid');
+        },
+        
+        // Si corrigen el error le pone marco verde de campo correcto
+        unhighlight: function(element) {
+            $(element).removeClass('is-invalid error').addClass('is-valid');
+        },
+        
+        // Ubica el mensaje de error de la foto en nuestro contenedor div personalizado (#error-foto)
+        errorPlacement: function(error, element) {
+            if (element.attr("name") === "foto") {
+                error.appendTo("#error-foto");
+            } else {
+                error.insertAfter(element);
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

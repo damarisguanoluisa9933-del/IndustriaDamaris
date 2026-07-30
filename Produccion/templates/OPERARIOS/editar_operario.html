@@ -1,0 +1,194 @@
+{% extends '../plantilla.html' %}
+{% load static %}
+
+{% block contenido %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow border-0">
+                <div class="card-header bg-warning text-dark">
+                    <h4 class="mb-0"><i class="bi bi-pencil-square me-2"></i>Editar Operario</h4>
+                </div>
+                <div class="card-body">
+                    <form id="frm_editar_operario" action="{% url 'editar_operario' operario.id %}" method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        <!-- Cédula -->
+                        <div class="mb-3">
+                            <label class="form-label"><b>Cédula Ecuatoriana:</b></label>
+                            <input type="text" class="form-control" name="cedula" id="cedula" value="{{ operario.cedula }}" maxlength="10">
+                        </div>
+
+                        <!-- Nombres y Apellidos -->
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label"><b>Nombres:</b></label>
+                                <input type="text" class="form-control" name="nombres" id="nombres" value="{{ operario.nombres }}">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label"><b>Apellidos:</b></label>
+                                <input type="text" class="form-control" name="apellidos" id="apellidos" value="{{ operario.apellidos }}">
+                            </div>
+                        </div>
+
+                        <!-- Teléfono y Correo -->
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label"><b>Teléfono Celular:</b></label>
+                                <input type="text" class="form-control" name="telefono" id="telefono" value="{{ operario.telefono }}" maxlength="10">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label"><b>Correo Electrónico:</b></label>
+                                <input type="email" class="form-control" name="correo" id="correo" value="{{ operario.correo }}">
+                            </div>
+                        </div>
+
+                        <!-- Foto Actual / Reemplazar -->
+                        <div class="mb-3">
+                            <label class="form-label"><b>Fotografía Obligatoria / Reemplazar:</b></label>
+                            <input type="file" id="foto_operario" name="foto" accept="image/*">
+                        </div>
+
+                        <!-- Botones -->
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{% url 'listado_operarios' %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-x-circle me-1"></i>Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-warning">
+                                <i class="bi bi-check-circle me-1"></i>Actualizar Operario
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+$(document).ready(function() {
+    // Variable para saber si la vista cargó con una foto existente en BD
+    var tieneFotoPrevia = {% if operario.foto %}true{% else %}false{% endif %};
+
+    // 1. Método personalizado: Comprueba que exista foto (nueva o previa)
+    $.validator.addMethod("fotoObligatoria", function(value, element) {
+        var tieneArchivoNuevo = element.files && element.files.length > 0;
+        // Si hay un archivo nuevo cargado O conserva la foto previa visible en el widget
+        var tienePreview = $('#foto_operario').closest('.file-input').find('.file-preview-frame').length > 0;
+        
+        return tieneArchivoNuevo || (tieneFotoPrevia && tienePreview);
+    }, "Debe incluir una fotografía obligatoriamente para guardar.");
+
+    // 2. Método personalizado: Comprueba la extensión de imagen (no permite PDFs)
+    $.validator.addMethod("extensionImagen", function(value, element) {
+        if (!element.files || element.files.length === 0) {
+            return true; // Si no seleccionó un archivo nuevo, la validación de presencia la maneja 'fotoObligatoria'
+        }
+        var file = element.files[0];
+        var extensionesPermitidas = ["jpg", "jpeg", "png", "webp"];
+        var ext = file.name.split('.').pop().toLowerCase();
+        
+        return $.inArray(ext, extensionesPermitidas) !== -1;
+    }, "Solo se permiten archivos de imagen (JPG, JPEG, PNG, WEBP). No se permiten PDFs.");
+
+    // 3. Inicializar FileInput
+    $("#foto_operario").fileinput({
+        language: 'es', 
+        showUpload: false, 
+        dropZoneEnabled: true, 
+        maxFileCount: 1,
+        allowedFileTypes: ['image'],
+        allowedFileExtensions: ['jpg', 'jpeg', 'png', 'webp'],
+        {% if operario.foto %}
+        initialPreview: ["<img src='{{ operario.foto.url }}' class='kv-preview-data file-preview-image' style='max-width:100%; height:auto;'>"],
+        initialPreviewAsData: false,
+        {% endif %}
+    });
+
+    // Revalidar inmediatamente al cambiar, limpiar o borrar la imagen en el widget
+    $('#foto_operario').on('change fileclear filecleared filepreremove', function() {
+        setTimeout(function() {
+            $("#frm_editar_operario").validate().element("#foto_operario");
+        }, 100);
+    });
+
+    // 4. Validación del Formulario
+    $("#frm_editar_operario").validate({
+        errorElement: 'label',
+        errorClass: 'error',
+        rules: {
+            cedula: { 
+                required: true, 
+                digits: true, 
+                minlength: 10,
+                maxlength: 10,
+                cedulaEcuador: true 
+            },
+            nombres: { 
+                required: true, 
+                soloLetras: true,
+                minlength: 2 
+            },
+            apellidos: { 
+                required: true, 
+                soloLetras: true,
+                minlength: 2 
+            },
+            telefono: {
+                required: true,
+                digits: true,
+                minlength: 10,
+                maxlength: 10,
+                celularEcuador: true
+            },
+            correo: { 
+                required: true, 
+                email: true 
+            },
+            foto: {
+                fotoObligatoria: true, // <--- OBLIGATORIO: Detiene el guardado si se elimina la foto
+                extensionImagen: true // <--- OBLIGATORIO: Bloquea archivos tipo PDF
+            }
+        },
+        messages: {
+            cedula: {
+                required: "La cédula es obligatoria.",
+                digits: "Ingrese únicamente números sin guiones ni espacios.",
+                minlength: "La cédula debe contener exactamente 10 dígitos.",
+                maxlength: "La cédula debe contener exactamente 10 dígitos."
+            },
+            nombres: {
+                required: "Los nombres son obligatorios.",
+                minlength: "Ingrese al menos 2 caracteres."
+            },
+            apellidos: {
+                required: "Los apellidos son obligatorios.",
+                minlength: "Ingrese al menos 2 caracteres."
+            },
+            telefono: {
+                required: "El celular es obligatorio.",
+                digits: "Ingrese únicamente números.",
+                minlength: "El celular debe tener exactamente 10 dígitos.",
+                maxlength: "El celular debe tener exactamente 10 dígitos.",
+                celularEcuador: "Ingrese un celular válido de Ecuador (ejemplo: 0991234567)."
+            },
+            correo: {
+                required: "El correo electrónico es obligatorio.",
+                email: "Ingrese un correo electrónico válido."
+            },
+            foto: {
+                fotoObligatoria: "Debe subir o mantener una fotografía del operario obligatoriamente.",
+                extensionImagen: "Formato de archivo no permitido. Seleccione una imagen (JPG, PNG, WEBP)."
+            }
+        },
+        errorPlacement: function (error, element) {
+            if (element.attr("name") === "foto") {
+                error.insertAfter(element.closest('.mb-3'));
+            } else {
+                error.insertAfter(element);
+            }
+        }
+    });
+});
+</script>
+{% endblock %}
