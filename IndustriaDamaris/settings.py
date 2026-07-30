@@ -103,8 +103,7 @@ if os.path.exists(STATIC_DIR_PATH):
 
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
-# Configuración de almacenamiento estático compatible para WhiteNoise
-# Configuración de almacenamiento estático compatible para WhiteNoise
+# Configuración de almacenamiento estático compatible para WhiteNoise en Django 4.2+ / 5.x
 STORAGES = {
     "default": {
         "BACKEND": "django.core.files.storage.FileSystemStorage",
@@ -113,7 +112,6 @@ STORAGES = {
         "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage",
     },
 }
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
 
 # Archivos multimedia subidos por los usuarios
 MEDIA_URL = '/media/'
