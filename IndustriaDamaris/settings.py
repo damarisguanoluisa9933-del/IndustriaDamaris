@@ -27,6 +27,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'pwa',  # Aplicación para PWA (Progressive Web App)
     'Produccion',  # Aplicación principal del proyecto
 ]
 
@@ -60,7 +61,7 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'IndustriaDamaris.wsgi.application'
 
-# BASE DE DATOS CONFIGURADA CON POSTGRESQL
+# BASE DE DATOS  CON POSTGRESQL
 DATABASES = {
     'default': dj_database_url.config(
         default=os.environ.get(
@@ -125,3 +126,27 @@ EMAIL_USE_TLS = True
 EMAIL_HOST_USER = 'damaris.guanoluisa9933@utc.edu.ec'
 EMAIL_HOST_PASSWORD = 'zwdltkkmjwrgntvr'
 DEFAULT_FROM_EMAIL = 'Industria Damaris <damaris.guanoluisa9933@utc.edu.ec>'
+
+
+# Configuración de PWA
+PWA_APP_NAME = 'Industria Damaris'
+PWA_APP_DESCRIPTION = 'Aplicación Web Progresiva de Industria Damaris'
+PWA_APP_THEME_COLOR = '#000000'
+PWA_APP_BACKGROUND_COLOR = '#ffffff'
+PWA_APP_DISPLAY = 'standalone'
+PWA_APP_SCOPE = '/'
+PWA_APP_ORIENTATION = 'any'
+PWA_APP_START_URL = '/'
+PWA_APP_STATUS_BAR_COLOR = 'default'
+PWA_APP_ICONS = [
+    {
+        'src': '/static/imagenes/icon-192.png',
+        'sizes': '192x192'
+    },
+    {
+        'src': '/static/imagenes/icon-512.png',
+        'sizes': '512x512'
+    }
+]
+PWA_APP_DIR = 'ltr'
+PWA_APP_LANG = 'es-EC'

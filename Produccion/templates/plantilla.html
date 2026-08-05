@@ -1,4 +1,4 @@
-{% load static %}
+{% load static pwa %}
 <!DOCTYPE html>
 <html lang="es">
 
@@ -6,6 +6,9 @@
     <meta charset="utf-8">
     <title>Industria Damaris - Control de Producción</title>
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
+
+    <!-- Carga los metadatos de la PWA y registra el Service Worker -->
+    {% progressive_web_app_meta %}
 
     <link href="{% static 'img/favicon.ico' %}" rel="icon">
 
@@ -71,7 +74,7 @@
         <div class="container">
             <nav class="navbar navbar-expand-lg navbar-light border-bottom border-2 border-white">
                 <a href="{% url 'inicio' %}" class="navbar-brand">
-                    <h1 class="text-primary m-0"><i class="bi bi-gear-wide-connected me-2"></i>Industria Damaris</h1>
+                    <h1 class="text-primary m-0"><i class="bi bi-gear-wide-connected me-2"></i>INDUSTRIA D.</h1>
                 </a>
                 
                 <button type="button" class="navbar-toggler ms-auto me-0" data-bs-toggle="collapse" data-bs-target="#navbarCollapse">

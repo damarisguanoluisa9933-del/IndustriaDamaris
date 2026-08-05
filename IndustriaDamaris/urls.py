@@ -23,6 +23,8 @@ from django.conf.urls.static import static
 urlpatterns = [
     # Panel de administracion de Django
     path('admin/', admin.site.urls),
+    # 1. Rutas de la PWA 
+    path('', include('pwa.urls')),
     
     # Inclusión de las URLs de la aplicación "Produccion"
     path('', include('Produccion.urls')),
