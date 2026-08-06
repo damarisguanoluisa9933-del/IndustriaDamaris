@@ -254,6 +254,23 @@
 
     <!-- Bloque indispensable para cargar scripts propios en las demás páginas -->
     {% block extra_js %}{% endblock %}
+    <!-- Script para disparar el mensaje de instalación PWA automáticamente -->
+    <script>
+        let deferredPrompt;
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            deferredPrompt.prompt();
+
+            deferredPrompt.userChoice.then((choiceResult) => {
+                if (choiceResult.outcome === 'accepted') {
+                    console.log('El usuario aceptó la instalación');
+                }
+                deferredPrompt = null;
+            });
+        });
+    </script>
 </body>
 
 </html>
