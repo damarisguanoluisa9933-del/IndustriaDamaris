@@ -105,8 +105,8 @@
 
                         <a href="{% url 'reporte_desperdicios' %}" class="nav-item nav-link" id="step-reportes"><i class="bi bi-bar-chart-line-fill me-1"></i>Reportes</a>
 
-                        <!-- BOTÓN PWA (OCULTO POR DEFECTO, SE MUESTRA SOLO SI NO ESTÁ INSTALADA) -->
-                        <button id="btnInstalarPWA" type="button" class="btn btn-info btn-sm fw-bold text-dark ms-2 me-1 shadow-sm d-none" title="Instalar Aplicación Web">
+                        <!-- BOTÓN PWA (VISIBLE POR DEFECTO EN EL LINK, SE OCULTA SOLO DENTRO DE LA APP INSTALADA) -->
+                        <button id="btnInstalarPWA" type="button" class="btn btn-info btn-sm fw-bold text-dark ms-2 me-1 shadow-sm" title="Instalar Aplicación Web">
                             <i class="bi bi-download me-1"></i> Instalar App
                         </button>
 
@@ -245,7 +245,7 @@
 
     <!-- Alertas con SweetAlert2 usando el filtro |safe para escapar comillas HTML correctamente -->
     {% if messages %}
-        {% for mensaje in messages %}
+        {% for mensaje in mensaje in messages %}
             <script>
                 Swal.fire({
                     icon: '{% if "success" in mensaje.tags %}success{% else %}error{% endif %}',
@@ -265,47 +265,42 @@
         let deferredPrompt;
         const btnInstalar = document.getElementById('btnInstalarPWA');
 
-        // Detecta si la app ya se ejecuta como PWA instalada
-        function esAppInstalada() {
-            return window.matchMedia('(display-mode: standalone)').matches || 
-                   window.navigator.standalone === true;
+        // Detecta si se está ejecutando dentro de la app ya instalada (modo standalone)
+        const esModoApp = window.matchMedia('(display-mode: standalone)').matches || 
+                          window.navigator.standalone === true;
+
+        if (esModoApp) {
+            // Si ya abrió la app instalada, oculta el botón
+            if (btnInstalar) btnInstalar.classList.add('d-none');
+        } else {
+            // Si entra desde el navegador web (link), el botón se mantiene visible
+            if (btnInstalar) btnInstalar.classList.remove('d-none');
         }
 
-        // Si ya está instalada, oculta el botón permanentemente
-        if (esAppInstalada() && btnInstalar) {
-            btnInstalar.classList.add('d-none');
-        }
-
-        // Captura el evento nativo del navegador únicamente cuando no esté instalada
+        // Captura el evento nativo para realizar la instalación directa
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
             deferredPrompt = e;
-
-            if (btnInstalar && !esAppInstalada()) {
-                btnInstalar.classList.remove('d-none');
-            }
         });
 
         if (btnInstalar) {
             btnInstalar.addEventListener('click', async () => {
-                if (!deferredPrompt) return;
-
-                // Llama al diálogo oficial del navegador inmediatamente
-                deferredPrompt.prompt();
-
-                const { outcome } = await deferredPrompt.userChoice;
-                if (outcome === 'accepted') {
-                    btnInstalar.classList.add('d-none');
+                if (deferredPrompt) {
+                    deferredPrompt.prompt();
+                    const { outcome } = await deferredPrompt.userChoice;
+                    if (outcome === 'accepted') {
+                        if (btnInstalar) btnInstalar.classList.add('d-none');
+                    }
+                    deferredPrompt = null;
+                } else {
+                    alert('Para instalar la aplicación, despliegue el menú de su navegador (3 puntos arriba a la derecha) y seleccione "Instalar aplicación" o "Agregar a la pantalla principal".');
                 }
-                deferredPrompt = null;
             });
         }
 
-        // Oculta el botón tras completar la instalación exitosamente
+        // Oculta el botón automáticamente tras finalizar la instalación
         window.addEventListener('appinstalled', () => {
-            if (btnInstalar) {
-                btnInstalar.classList.add('d-none');
-            }
+            if (btnInstalar) btnInstalar.classList.add('d-none');
             deferredPrompt = null;
         });
     </script>
