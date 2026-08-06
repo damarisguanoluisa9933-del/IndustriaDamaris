@@ -129,6 +129,7 @@ DEFAULT_FROM_EMAIL = 'Industria Damaris <damaris.guanoluisa9933@utc.edu.ec>'
 
 
 # Configuración de PWA
+
 PWA_APP_NAME = 'Industria Damaris'
 PWA_APP_DESCRIPTION = 'Aplicación Web Progresiva de Industria Damaris'
 PWA_APP_THEME_COLOR = '#000000'
@@ -141,12 +142,15 @@ PWA_APP_STATUS_BAR_COLOR = 'default'
 PWA_APP_ICONS = [
     {
         'src': '/static/imagenes/icon-192.png',
-        'sizes': '192x192'
+        'sizes': '192x192',
+        'type': 'image/png'
     },
     {
         'src': '/static/imagenes/icon-512.png',
-        'sizes': '512x512'
+        'sizes': '512x512',
+        'type': 'image/png'
     }
 ]
 PWA_APP_DIR = 'ltr'
 PWA_APP_LANG = 'es-EC'
+PWA_SERVICE_WORKER_PATH = os.path.join(BASE_DIR, 'serviceworker.js')
