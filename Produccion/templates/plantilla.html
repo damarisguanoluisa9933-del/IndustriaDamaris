@@ -105,8 +105,8 @@
 
                         <a href="{% url 'reporte_desperdicios' %}" class="nav-item nav-link" id="step-reportes"><i class="bi bi-bar-chart-line-fill me-1"></i>Reportes</a>
 
-                        <!-- BOTÓN PWA SIEMPRE VISIBLE -->
-                        <button id="btnInstalarPWA" type="button" class="btn btn-info btn-sm fw-bold text-dark ms-2 me-1 shadow-sm" title="Instalar Aplicación Web">
+                        <!-- BOTÓN PWA (OCULTO POR DEFECTO, SE MUESTRA SOLO SI NO ESTÁ INSTALADA) -->
+                        <button id="btnInstalarPWA" type="button" class="btn btn-info btn-sm fw-bold text-dark ms-2 me-1 shadow-sm d-none" title="Instalar Aplicación Web">
                             <i class="bi bi-download me-1"></i> Instalar App
                         </button>
 
@@ -265,31 +265,49 @@
         let deferredPrompt;
         const btnInstalar = document.getElementById('btnInstalarPWA');
 
+        // Detecta si la app ya se ejecuta como PWA instalada
+        function esAppInstalada() {
+            return window.matchMedia('(display-mode: standalone)').matches || 
+                   window.navigator.standalone === true;
+        }
+
+        // Si ya está instalada, oculta el botón permanentemente
+        if (esAppInstalada() && btnInstalar) {
+            btnInstalar.classList.add('d-none');
+        }
+
+        // Captura el evento nativo del navegador únicamente cuando no esté instalada
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
             deferredPrompt = e;
+
+            if (btnInstalar && !esAppInstalada()) {
+                btnInstalar.classList.remove('d-none');
+            }
         });
 
         if (btnInstalar) {
             btnInstalar.addEventListener('click', async () => {
-                if (deferredPrompt) {
-                    deferredPrompt.prompt();
-                    const { outcome } = await deferredPrompt.userChoice;
-                    if (outcome === 'accepted') {
-                        console.log('El usuario instaló la PWA de Industria Damaris');
-                    }
-                    deferredPrompt = null;
-                } else {
-                    // Si el navegador no ha capturado la instalación aún o ya está instalada
-                    Swal.fire({
-                        icon: 'info',
-                        title: 'Instalación de Aplicación',
-                        text: 'Para instalar la app en su teléfono, presione los 3 puntos de su navegador (arriba a la derecha) y seleccione "Agregar a la pantalla principal".',
-                        confirmButtonColor: '#0d6efd'
-                    });
+                if (!deferredPrompt) return;
+
+                // Llama al diálogo oficial del navegador inmediatamente
+                deferredPrompt.prompt();
+
+                const { outcome } = await deferredPrompt.userChoice;
+                if (outcome === 'accepted') {
+                    btnInstalar.classList.add('d-none');
                 }
+                deferredPrompt = null;
             });
         }
+
+        // Oculta el botón tras completar la instalación exitosamente
+        window.addEventListener('appinstalled', () => {
+            if (btnInstalar) {
+                btnInstalar.classList.add('d-none');
+            }
+            deferredPrompt = null;
+        });
     </script>
 </body>
 
