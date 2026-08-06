@@ -54,24 +54,10 @@
     <script src="{% static 'vendor/fileinput/es.js' %}"></script>
     <script src="{% static 'vendor/fileinput/theme.min.js' %}"></script>
 
-    <!-- MOSTRANDO MENSAJES DE ERROR EN ROJO Y ESTILOS DE PWA -->
+    <!-- MOSTRANDO MENSAJES DE ERROR EN ROJO -->
     <style>
         label.error { color: #dc3545 !important; font-size: 13px; font-weight: bold; margin-top: 5px; display: block; }
         input.error, select.error, textarea.error { border-color: #dc3545 !important; }
-        
-        /* Estilo personalizado para el botón de instalación PWA */
-        .btn-pwa-install {
-            background-color: #0dcaf0;
-            color: #000;
-            border: none;
-            font-weight: 700;
-            transition: all 0.3s ease;
-        }
-        .btn-pwa-install:hover {
-            background-color: #0bacce;
-            color: #fff;
-            transform: translateY(-1px);
-        }
     </style>
 </head>
 
@@ -119,8 +105,8 @@
 
                         <a href="{% url 'reporte_desperdicios' %}" class="nav-item nav-link" id="step-reportes"><i class="bi bi-bar-chart-line-fill me-1"></i>Reportes</a>
 
-                        <!-- Botón personalizado para Instalar App PWA -->
-                        <button id="btnInstalarPWA" type="button" class="btn btn-pwa-install btn-sm ms-2 me-1 d-none" title="Instalar Aplicación Web">
+                        <!-- BOTÓN PWA SIEMPRE VISIBLE -->
+                        <button id="btnInstalarPWA" type="button" class="btn btn-info btn-sm fw-bold text-dark ms-2 me-1 shadow-sm" title="Instalar Aplicación Web">
                             <i class="bi bi-download me-1"></i> Instalar App
                         </button>
 
@@ -280,41 +266,30 @@
         const btnInstalar = document.getElementById('btnInstalarPWA');
 
         window.addEventListener('beforeinstallprompt', (e) => {
-            // Previene la notificación automática por defecto
             e.preventDefault();
             deferredPrompt = e;
-
-            // Muestra el botón de instalación en la barra superior
-            if (btnInstalar) {
-                btnInstalar.classList.remove('d-none');
-            }
         });
 
         if (btnInstalar) {
             btnInstalar.addEventListener('click', async () => {
-                if (!deferredPrompt) return;
-
-                // Muestra la ventana emergente de instalación
-                deferredPrompt.prompt();
-
-                const { outcome } = await deferredPrompt.userChoice;
-                if (outcome === 'accepted') {
-                    console.log('El usuario instaló la PWA de Industria Damaris');
+                if (deferredPrompt) {
+                    deferredPrompt.prompt();
+                    const { outcome } = await deferredPrompt.userChoice;
+                    if (outcome === 'accepted') {
+                        console.log('El usuario instaló la PWA de Industria Damaris');
+                    }
+                    deferredPrompt = null;
+                } else {
+                    // Si el navegador no ha capturado la instalación aún o ya está instalada
+                    Swal.fire({
+                        icon: 'info',
+                        title: 'Instalación de Aplicación',
+                        text: 'Para instalar la app en su teléfono, presione los 3 puntos de su navegador (arriba a la derecha) y seleccione "Agregar a la pantalla principal".',
+                        confirmButtonColor: '#0d6efd'
+                    });
                 }
-                
-                deferredPrompt = null;
-                // Oculta el botón tras realizar la acción
-                btnInstalar.classList.add('d-none');
             });
         }
-
-        // Si la aplicación ya está instalada, asegura que el botón no aparezca
-        window.addEventListener('appinstalled', () => {
-            if (btnInstalar) {
-                btnInstalar.classList.add('d-none');
-            }
-            deferredPrompt = null;
-        });
     </script>
 </body>
 
