@@ -245,7 +245,7 @@
 
     <!-- Alertas con SweetAlert2 usando el filtro |safe para escapar comillas HTML correctamente -->
     {% if messages %}
-        {% for mensaje in mensaje in messages %}
+        {% for mensaje in messages %}
             <script>
                 Swal.fire({
                     icon: '{% if "success" in mensaje.tags %}success{% else %}error{% endif %}',
